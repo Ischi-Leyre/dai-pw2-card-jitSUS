@@ -3,11 +3,11 @@
 ![Java](https://img.shields.io/badge/java-21-orange?logo=openjdk)
 
 ## Tables of contents
+- [Tables of contents](#tables-of-contents)
 - [Description](#description)
   - [Commands](#commands)
   - [Rules](#Rules)
   - [If enough time](if-enough-time)
-- [Tables of contents](#tables-of-contents)
 - [Clone and build](#clone-and-build)
   - [For Linux / MacOS](#for-linux--macos)
   - [For Windows](#for-windows)
