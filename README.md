@@ -48,10 +48,10 @@ There are three possible victory types per round:
     → Winner: +2 pts | Loser: +0 pts
 
     Type hierarchy:
-    - Acid beats Gun
-    - Gun beats Knife
-    - Knife beats Fist
-    - Fist beats Acid
+    - 🧪 : Acid beats Gun
+    - 🔫 : Gun beats Knife
+    - 🔪 : Knife beats Fist
+    - 👊 : Fist beats Acid
 
 2. Equal-Type Victory:
     If both cards share the same type, the higher value wins.
@@ -129,12 +129,35 @@ mvnw.cmd clean package
 
 **TODO**
 
-## Authors
-- **Ischi Marc**
-- **Leyre Arnaut**
-
 ## Utilisation IA
 - NONE yet
 
-## References
-- [PiccoCLI](https://picocli.info/)
+<footer style="padding: 1rem; background-color: rgba(0,0,0,0); border-top: 1px solid rgba(0,0,0,0);">
+  <div style="display: flex; justify-content: center; gap: 4rem; flex-wrap: wrap; text-align: center;">
+    <div>
+    <h3>Authors</h3>
+    <p>
+        <strong><a href="https://github.com/Ischim" target="_blank" rel="noopener noreferrer">Ischi Marc</a></strong><br>
+            <strong>
+            <a href="https://github.com/Arnaut">Leyre Arnaut</a>
+            </strong>
+    </p>
+    </div>
+    <div>
+    <h3>References</h3>
+    <p>
+        <a href="https://picocli.info/" target="_blank" rel="noopener noreferrer">
+            <img    src="https://picocli.info/images/logo/horizontal.png"
+                    alt="PicoCLI"
+                    style="width: 105px; height: 39px">
+        </a>
+    </p>
+    </div>
+  </div>
+
+  <div style="margin-top: 1rem;">
+    <img src="Documents/card-jitSUS.png"
+         alt="Project logo"
+         style="width: 80px; height: 100px; display: block; margin: 0 auto;">
+  </div>
+</footer>
