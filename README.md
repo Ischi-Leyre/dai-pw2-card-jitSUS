@@ -7,13 +7,14 @@
 - [Description](#description)
   - [Commands](#commands)
   - [Rules](#Rules)
-  - [If enough time](if-enough-time)
+  - [If enough time](#if-enough-time)
 - [Clone and build](#clone-and-build)
   - [For Linux / MacOS](#for-linux--macos)
   - [For Windows](#for-windows)
 - [Usage](#usage)
-- [Authors](#authors)
 - [Utilisation IA](#utilisation-ia)
+- [Authors](#authors)
+- [References](#references)
 
 ## Description
 
@@ -31,10 +32,10 @@
 ### Rules:
 Each card is unique and has both a type and a value between 1 and 9.
 **The 4 card types are:**
-- Knife
-- Gun
-- Fist
-- Acid
+- 🧪 : Knife
+- 🔫 : Gun
+- 🔪 : Fist
+- 👊 : Acid
 
 Each player has a hand of 5 cards drawn from a deck of 36 cards.
 Each turn, a player has 30 seconds to play one card (otherwise, a random card is automatically played).
@@ -48,10 +49,10 @@ There are three possible victory types per round:
     → Winner: +2 pts | Loser: +0 pts
 
     Type hierarchy:
-    - 🧪 : Acid beats Gun
-    - 🔫 : Gun beats Knife
-    - 🔪 : Knife beats Fist
-    - 👊 : Fist beats Acid
+    - Acid beats Gun
+    - Gun beats Knife
+    - Knife beats Fist
+    - Fist beats Acid
 
 2. Equal-Type Victory:
     If both cards share the same type, the higher value wins.
@@ -112,18 +113,18 @@ Build the project and generate the jar file
 
 ### For Windows
 Download the dependencies (only for the first time)
-~~~bash
+~~~PowerShell
 mvnw.cmd dependency:go-offline
 ~~~
 
 Build the project and generate the jar file
-~~~bash
+~~~PowerShell
 mvnw.cmd clean package
 ~~~
 
 > [!NOTE]
 > 
-> If you use the IDE IntelliJ, yon can directly run the configuration **mak jar file application** to automatic build the project and generate the jar file.
+> If you use the IDE IntelliJ, yon can directly run the configuration **make jar file application** to automatic build the project and generate the jar file.
 
 ## Usage
 
@@ -135,16 +136,19 @@ mvnw.cmd clean package
 <footer style="padding: 1rem; background-color: rgba(0,0,0,0); border-top: 1px solid rgba(0,0,0,0);">
   <div style="display: flex; justify-content: center; gap: 4rem; flex-wrap: wrap; text-align: center;">
     <div>
-    <h3>Authors</h3>
+    <h3 id="authors">Authors</h3>
     <p>
-        <strong><a href="https://github.com/Ischim" target="_blank" rel="noopener noreferrer">Ischi Marc</a></strong><br>
-            <strong>
-            <a href="https://github.com/Arnaut">Leyre Arnaut</a>
-            </strong>
+        <strong>
+        <a href="https://github.com/Ischim">Ischi Marc</a>
+        </strong>
+        <br>
+        <strong>
+        <a href="https://github.com/Arnaut">Leyre Arnaut</a>
+        </strong>
     </p>
     </div>
     <div>
-    <h3>References</h3>
+    <h3 id="references">References</h3>
     <p>
         <a href="https://picocli.info/" target="_blank" rel="noopener noreferrer">
             <img    src="https://picocli.info/images/logo/horizontal.png"
@@ -156,8 +160,10 @@ mvnw.cmd clean package
   </div>
 
   <div style="margin-top: 1rem;">
-    <img src="Documents/card-jitSUS.png"
-         alt="Project logo"
-         style="width: 80px; height: 100px; display: block; margin: 0 auto;">
+    <a href="https://github.com/Ischi-Leyre/dai-pw2-card-jitSUS" target="_blank" rel="noopener noreferrer">
+        <img src="Documents/images/card-jitSUS.png"
+             alt="Project logo"
+            style="width: 80px; height: 100px; display: block; margin: 0 auto;">
+    </a>
   </div>
 </footer>
