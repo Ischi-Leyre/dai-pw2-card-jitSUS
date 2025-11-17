@@ -32,10 +32,10 @@
 ### Rules:
 Each card is unique and has both a type and a value between 1 and 9.
 **The 4 card types are:**
-- 🧪 : Knife
+- 🔪 : Knife
 - 🔫 : Gun
-- 🔪 : Fist
-- 👊 : Acid
+- 👊 : Fist
+- 🧪 : Acid
 
 Each player has a hand of 5 cards drawn from a deck of 36 cards.
 Each turn, a player has 30 seconds to play one card (otherwise, a random card is automatically played).
