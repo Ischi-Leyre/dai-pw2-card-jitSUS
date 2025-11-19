@@ -131,7 +131,19 @@ mvnw.cmd clean package
 **TODO**
 
 ## Utilisation IA
-- NONE yet
+- ChatGPT :
+  - Issue template: correction and help for the structure.
+  - README: help for the integration HTML code (i.e. footer)
+  - Code: generate the Java doc of Class / function.
+
+- GitHub Copilot:
+  - commit: for the commits made in browsers, name and description
+
+- Reverso:
+  - spelling, syntax, and reformulation : README, GitHub and comment in code: 
+    - README
+    - GitHub
+    - Code: function and block comment
 
 <footer style="padding: 1rem; background-color: rgba(0,0,0,0); border-top: 1px solid rgba(0,0,0,0);">
   <div style="display: flex; justify-content: center; gap: 4rem; flex-wrap: wrap; text-align: center;">
