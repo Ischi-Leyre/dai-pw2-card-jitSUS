@@ -7,6 +7,8 @@
 .idea/jarRepositories.xml
 .idea/modules.xml
 .idea/workspace.xml
+.idea/copilot.data.migration.agent.xml
+.idea/remote-targets.xml
 *.iws
 *.iml
 *.ipr
