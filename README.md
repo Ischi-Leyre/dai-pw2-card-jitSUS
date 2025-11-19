@@ -77,7 +77,6 @@ A match ends when:
 - Add mmr ( score was made with score all game divide by the number of games) (integrated in getplayer)
    - mmr updapte each end game ( special if a player surrender, take 0 point)
 - add rank commande : return a ranking with all players connected.
-for information : @Arnaut 
 
 ## Clone and build
 These following instructions will help you to get a copy of the project up and running on your local machine for development and testing purposes.
