@@ -8,6 +8,8 @@
 .idea/modules.xml
 .idea/workspace.xml
 .idea/copilot.data.migration.agent.xml
+.idea/copilot.data.migration.ask.xml
+.idea/copilot.data.migration.edit.xml
 .idea/remote-targets.xml
 *.iws
 *.iml

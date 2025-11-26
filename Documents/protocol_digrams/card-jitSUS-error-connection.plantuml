@@ -1,0 +1,25 @@
+@startuml
+title Connexion Error
+
+skinparam actorStyle awesome
+skinparam participantStyle awesome
+
+actor Alice as c1
+participant Server as s
+actor Bob as c2
+
+
+== Connexion ==
+c1 -> s : CONNECT alice
+s --> c1 : OK
+
+c2 -> s : CONNECT alice
+s --> c2 : ERROR 1
+
+c2 -> s : CONNECT Bob Lennon
+s --> c2 : ERROR 2
+
+note over c1, c2
+The disconnection part is the same as in "A Match" diagram.
+endnote
+@enduml
