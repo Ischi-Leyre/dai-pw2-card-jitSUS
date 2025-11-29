@@ -179,4 +179,33 @@ public class ClientHandler implements Runnable {
 
     // BROADCAST MESSAGES TO ALL CONNECTED PLAYERS ?
 
+    /* Handlers for commands */
+    private void handleConnect(String[] parts) throws IOException {
+        if (username != null) {
+            sendRaw("ERROR " + errorCodes.NOT_AUTHENTICATED);
+            return;
+        }
+
+        if (parts.length < 2) {
+            sendRaw("ERROR " + errorCodes.NO_NAME_PROVIDED);
+            return;
+        }
+
+        String requested = parts[1].trim();
+        if (requested.isEmpty() || requested.contains(" ")) {
+            sendRaw("ERROR " + errorCodes.INVALIDE_NAME);
+            return;
+        }
+
+        synchronized (connectedPlayers) {
+            if (connectedPlayers.containsKey(requested)) {
+                sendRaw("ERROR " + errorCodes.NAME_IN_USE); // username already in use
+                return;
+            }
+            username = requested;
+            connectedPlayers.put(username, this);
+            sendRaw("OK");
+            // Here for a broadcast join
+        }
+    }
 }
