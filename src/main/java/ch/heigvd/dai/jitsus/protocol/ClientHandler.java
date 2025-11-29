@@ -226,4 +226,26 @@ public class ClientHandler implements Runnable {
         running = false;
         // here for a broadcast leave
     }
+
+    private void handleGetPlayers() throws IOException {
+        if (!isAuthenticated()) {
+            sendRaw("ERROR " + errorCodes.NOT_AUTHENTICATED);
+            return;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (String user : connectedPlayers.keySet()) {
+            if (!user.equals(username)  // exclude self
+                    && !connectedPlayers.get(user).isInMatch() // exclude in-match
+                    && !connectedPlayers.get(user).isChallenged()) { // exclude challenged
+                sb.append(user).append("\t\t").append(getMmr()).append("\n");
+            }
+        }
+
+        if (sb.isEmpty()) {
+            sendRaw("PLAYERS EMPTY");
+        } else {
+            sendRaw("PLAYERS\tMMR\n" + sb);
+        }
+    }
+
 }
