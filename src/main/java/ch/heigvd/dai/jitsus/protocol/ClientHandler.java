@@ -137,4 +137,30 @@ public class ClientHandler implements Runnable {
         out.write("\n");
         out.flush();
     }
+
+    /* Getters */
+    public String getUsername() {
+        return username;
+    }
+
+    private double getMmr() {
+        double mmr = 0;
+        int games = this.gamesPlayed.get();
+        int score = this.score.get();
+
+        if (games > 0)
+            mmr = (double) score / games;
+
+        return mmr;
+    }
+
+    /* Setters */
+    private void setLastChallenger(String from) {
+        this.lastChallenger = from;
+    }
+
+    public void setMatch(MatchHandler session) {
+        this.match = session;
+    }
+
 }
