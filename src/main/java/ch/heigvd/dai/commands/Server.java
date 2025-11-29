@@ -55,28 +55,22 @@ public class Server implements Callable<Integer> {
             }));
 
             while (!threadPool.isShutdown()) {
-                try {
+                try (Socket clientSocket = serverSocket.accept()){
                     if (connectedClients.get() < maxClients) {
-                        Socket clientSocket = serverSocket.accept();
                         System.out.println("[SERVER] Connection from " + clientSocket.getRemoteSocketAddress());
                         connectedClients.incrementAndGet();
                         ClientHandler handler = new ClientHandler(clientSocket, connectedPlayers, connectedClients);
                         threadPool.execute(handler);
                     } else {
                         // simple backoff: accept and close or block until slot available; here just sleep briefly
-                        Socket clientSocket = serverSocket.accept();
                         BufferedWriter out = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream(), StandardCharsets.UTF_8));
                         out.write("[SERVER] Max clients reached. Rejecting connection from " + clientSocket.getRemoteSocketAddress());
                         out.flush();
                         clientSocket.close();
                         out.close();
-                        Thread.sleep(100);
                     }
                 } catch (IOException e) {
                     System.err.println("[SERVER] IO exception: " + e.getMessage());
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
                 }
             }
         } catch (IOException e) {
