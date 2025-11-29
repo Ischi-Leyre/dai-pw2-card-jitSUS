@@ -11,7 +11,7 @@ public class ClientHandler implements Runnable {
     private final Socket clientSocket;
     private final Map<String, ClientHandler> connectedPlayers;
     private final AtomicInteger connectedClients;
-    private volatile MatchHandler match = null;
+    private volatile GameManager match = null;
 
     private BufferedReader in;
     private BufferedWriter out;
@@ -207,5 +207,23 @@ public class ClientHandler implements Runnable {
             sendRaw("OK");
             // Here for a broadcast join
         }
+    }
+
+    private void handleDisconnect() throws IOException {
+        if (!isAuthenticated()) {
+            sendRaw("ERROR " + errorCodes.NOT_AUTHENTICATED);
+            return;
+        }
+
+        if (match != null) {
+            try {
+                match.receive(username, "DISCONNECT");
+            } catch (Exception ignored) {}
+            match = null;
+        }
+
+        sendRaw("OK");
+        running = false;
+        // here for a broadcast leave
     }
 }
