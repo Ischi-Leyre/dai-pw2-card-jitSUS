@@ -106,6 +106,9 @@ public class ClientHandler implements Runnable {
                     case "MATCH_MSG":
                         handleMatch(parts);
                         break;
+                    case "ROUND_END":
+                        handleRoundEnd();
+                        break;
                     case "SURRENDER":
                         handleSurrender();
                         break;
@@ -121,5 +124,17 @@ public class ClientHandler implements Runnable {
         } finally {
             cleanup();
         }
+    }
+
+    /* Communication methods */
+    public synchronized void send(String message) throws IOException {
+        sendRaw(message);
+    }
+
+    private synchronized void sendRaw(String message) throws IOException {
+        if (out == null) return;
+        out.write(message);
+        out.write("\n");
+        out.flush();
     }
 }
