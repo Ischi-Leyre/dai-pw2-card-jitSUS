@@ -43,7 +43,62 @@ public class Server implements Callable<Integer> {
 
     @Override
     public Integer call() {
-        throw new UnsupportedOperationException(
-                "Please remove this exception and implement this method.");
+        threadPool = Executors.newFixedThreadPool(maxClients);
+
+        try (ServerSocket serverSocket = new ServerSocket()) {
+            serverSocket.bind(new InetSocketAddress(host, port));
+            System.out.println("[SERVER] Listening on port " + port);
+
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                System.out.println("[SERVER] Shutdown requested.");
+                shutdown();
+            }));
+
+            while (!threadPool.isShutdown()) {
+                try {
+                    if (connectedClients.get() < maxClients) {
+                        Socket clientSocket = serverSocket.accept();
+                        System.out.println("[SERVER] Connection from " + clientSocket.getRemoteSocketAddress());
+                        connectedClients.incrementAndGet();
+                        ClientHandler handler = new ClientHandler(clientSocket, connectedPlayers, connectedClients);
+                        threadPool.execute(handler);
+                    } else {
+                        // simple backoff: accept and close or block until slot available; here just sleep briefly
+                        Socket clientSocket = serverSocket.accept();
+                        BufferedWriter out = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream(), StandardCharsets.UTF_8));
+                        out.write("[SERVER] Max clients reached. Rejecting connection from " + clientSocket.getRemoteSocketAddress());
+                        out.flush();
+                        clientSocket.close();
+                        out.close();
+                        Thread.sleep(100);
+                    }
+                } catch (IOException e) {
+                    System.err.println("[SERVER] IO exception: " + e.getMessage());
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("[SERVER] Cannot open server socket: " + e.getMessage());
+            return -1;
+        } finally {
+            shutdown();
+        }
+        return 0;
+    }
+
+    private void shutdown() {
+        if (threadPool != null && !threadPool.isShutdown()) {
+            threadPool.shutdown();
+            try {
+                if (!threadPool.awaitTermination(5, TimeUnit.SECONDS)) {
+                    threadPool.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                threadPool.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 }
