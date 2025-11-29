@@ -67,6 +67,59 @@ public class ClientHandler implements Runnable {
 
     @Override
     public void run (){
+        try (Socket socket = clientSocket) {
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+            out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
 
+            // Prompt minimal (optional)
+            sendRaw("WELCOME to the Game Card jitSUS");
+
+            String line;
+            while (running && (line = in.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty()) {
+                    continue;
+                }
+
+                String[] parts = line.split("\\s+");
+                String cmd = parts[0].toUpperCase();
+
+                switch (cmd) {
+                    case "CONNECT":
+                        handleConnect(parts);
+                        break;
+                    case "DISCONNECT":
+                        handleDisconnect();
+                        return;
+                    case "GETPLAYERS":
+                        handleGetPlayers();
+                        break;
+                    case "CHALLENGE":
+                        handleChallenge(parts);
+                        break;
+                    case "ACCEPT":
+                        handleAccept(parts);
+                        break;
+                    case "PLAY":
+                        handlePlay(parts);
+                        break;
+                    case "MATCH_MSG":
+                        handleMatch(parts);
+                        break;
+                    case "SURRENDER":
+                        handleSurrender();
+                        break;
+                    case "MMR":
+                        handleMmr();
+                        break;
+                    default:
+                        sendRaw("INVALID_COMMAND");
+                }
+            }
+        } catch (IOException e) {
+            // client likely disconnected unexpectedly
+        } finally {
+            cleanup();
+        }
     }
 }
