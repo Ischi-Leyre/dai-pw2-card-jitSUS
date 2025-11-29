@@ -248,4 +248,30 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    private void handleChallenge(String[] parts) throws IOException {
+        if (!isAuthenticated()) {
+            sendRaw("ERROR " + errorCodes.NOT_AUTHENTICATED);
+            return;
+        }
+        if (parts.length < 2) {
+            sendRaw("ERROR " + errorCodes.TARGET_NOT_FOUND);
+            return;
+        }
+        String target = parts[1];
+        if (target.equals(username)) {
+            sendRaw("ERROR " + errorCodes.NOT_CHALLENGING_SELF);
+            return;
+        }
+        ClientHandler targetHandler = connectedPlayers.get(target);
+        if (targetHandler == null) {
+            sendRaw("ERROR " + errorCodes.USER_NOT_FOUND);
+            return;
+        }
+
+        // No game-state implemented: assume available
+        sendRaw("CHALLENGE_SENT");
+        setLastChallenger(target.trim());
+        targetHandler.setLastChallenger(username);
+        targetHandler.sendRaw("CHALLENGE_REQUEST " + username);
+    }
 }
