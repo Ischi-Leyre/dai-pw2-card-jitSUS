@@ -31,9 +31,10 @@ CONNECT <username>
 
 Response:
 - `OK`: connection accepted
-- `ERROR <code>`:
-    - 1: username already in use
-    - 2: invalid name (empty or containing spaces)
+- `ERROR <message>`:
+    - `NO NAME PROVIDED` : no username provided
+    - `NAME IN USE` : username already in use
+    - `INVALID NAME` : username contains invalid characters (no spaces allowed)
 
 ### Disconnection
 
@@ -44,7 +45,7 @@ DISCONNECT
 
 Response:
 - `OK`: disconnection accepted (server closes connection)
-- `ERROR <code>`:
+- `ERROR <message>:
     - 1: not connected
 
 ### List available players
@@ -57,19 +58,7 @@ GETPLAYERS
 Response:
 - `PLAYERS <player1> <player2> ...`: list of available players (not in a match, not on standby)
 - `PLAYERS_EMPTY`: no players available
-- `ERROR <code>`:
-    - 1: not connected
-
-### Rules
-
-Message:
-```
-RULES
-```
-
-Response:
-- `RULES <text>`: text of the rules (may contain underscores or be returned as multiple lines using several lines prefixed with `RULES `)
-- `ERROR <code>`:
+- `ERROR <message>`:
     - 1: not connected
 
 ### Send a challenge
@@ -81,7 +70,7 @@ CHALLENGE <targetPlayer>
 
 Immediate response to the requester:
 - `CHALLENGE_SENT`: request sent
-- `ERROR <code>`:
+- `ERROR <message>`:
     - 1: target not found
     - 2: target unavailable (already in a match or waiting)
     - 3: not connected
@@ -105,14 +94,6 @@ Server behaviour:
 - If `N`: `CHALLENGE_DECLINED <fromPlayer>` sent to the challenger.
 - If no response within 10 seconds: behaviour equivalent to `N` and `CHALLENGE_TIMEOUT <fromPlayer>` sent to the challenger.
 
-### Receiving the hand of cards
-
-Message (Server -> Client):
-```
-CARD <card1> <card2> <card3> <card4> <card5>
-```
-- `cardX`: format `<type><value>` where `type` is a character from {🔪, 🔫, 👊, 🧪} and `value` is an integer between 1 and 9.
-
 ### Play a card
 
 Message:
@@ -125,7 +106,7 @@ Response:
 - `MOVE_ACCEPTED <cardNum>`: move accepted
 - `ROUND_RESULT <scoreUpdate>`: round result (sent to the player(s) concerned)
 - `GAME_OVER <result>`: end of the game and final score
-- `ERROR <code>`:
+- `ERROR <message>`:
     - 1: not connected
     - 2: invalid card number (not between 1 and 5)
     - 3: game not found
@@ -140,9 +121,48 @@ SURRENDER
 Response:
 - `SURRENDERED`: action accepted, game over (loser = the one who surrenders)
 - `GAME_OVER <result>`: final result and updated scores
-- `ERROR <code>`:
+- `ERROR <message>`:
     - 1: not connected
     - 2: not in game
+
+### Command only client side
+
+#### Rules
+
+Message:
+```
+RULES
+```
+
+Response:
+- printout of the game rules
+
+#### Help
+Message:
+```
+HELP
+```
+
+Response:
+- printout the list of available commands
+
+##### more help
+Message:
+```
+HELP <command>
+```
+
+Response:
+- printout of the detailed help for the specified command and the usage
+
+### Server notifications
+### Receiving the hand of cards
+
+Message (Server -> Client):
+```
+CARDS <card1> <card2> <card3> <card4> <card5>
+```
+- `cardX`: format `<type><value>` where `type` is a character from {🔪, 🔫, 👊, 🧪} and `value` is an integer between 1 and 9.
 
 ### Invalid command
 
