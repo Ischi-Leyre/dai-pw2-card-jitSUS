@@ -140,6 +140,7 @@ public class ClientHandler implements Runnable {
 
     /* Getters */
     public String getUsername() {
+        if (isAuthenticated()) return null;
         return username;
     }
 
@@ -162,5 +163,20 @@ public class ClientHandler implements Runnable {
     public void setMatch(MatchHandler session) {
         this.match = session;
     }
+
+    /* Utility / staus checking methods */
+    private boolean isAuthenticated() {
+        return username != null;
+    }
+
+    public boolean isInMatch() {
+        return match != null;
+    }
+
+    public boolean isChallenged () {
+        return lastChallenger != null;
+    }
+
+    // BROADCAST MESSAGES TO ALL CONNECTED PLAYERS ?
 
 }
