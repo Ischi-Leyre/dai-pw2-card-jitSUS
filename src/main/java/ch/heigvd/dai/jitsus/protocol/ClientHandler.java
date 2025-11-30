@@ -16,7 +16,7 @@ public class ClientHandler implements Runnable {
     private BufferedReader in;
     private BufferedWriter out;
     private volatile String username = null;
-    private volatile String lastChallenger = null;
+    private volatile ClientHandler lastChallenger = null;
     private volatile boolean running = true;
 
     // MMR attributes
@@ -155,11 +155,13 @@ public class ClientHandler implements Runnable {
     }
 
     /* Setters */
-    private void setLastChallenger(String from) {
-        this.lastChallenger = from;
+    private void setLastChallenger(ClientHandler player) {
+        if(!isAuthenticated()) return;
+        this.lastChallenger = player;
     }
 
     public void setMatchSession(GameManager session) {
+        if(!isAuthenticated()) return;
         this.matchSession = session;
     }
 
@@ -269,8 +271,8 @@ public class ClientHandler implements Runnable {
 
         // No game-state implemented: assume available
         sendRaw("CHALLENGE_SENT");
-        setLastChallenger(target.trim());
-        targetHandler.setLastChallenger(username);
+        setLastChallenger(targetHandler);
+        targetHandler.setLastChallenger(this);
         targetHandler.sendRaw("CHALLENGE_REQUEST " + username);
     }
 
