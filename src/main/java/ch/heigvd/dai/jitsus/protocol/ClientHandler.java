@@ -1,5 +1,7 @@
 package ch.heigvd.dai.jitsus.protocol;
 
+import ch.heigvd.dai.test.MatchSession;
+
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
@@ -160,7 +162,7 @@ public class ClientHandler implements Runnable {
         this.lastChallenger = from;
     }
 
-    public void setMatch(MatchHandler session) {
+    public void setMatch(GameManager session) {
         this.match = session;
     }
 
@@ -273,5 +275,43 @@ public class ClientHandler implements Runnable {
         setLastChallenger(target.trim());
         targetHandler.setLastChallenger(username);
         targetHandler.sendRaw("CHALLENGE_REQUEST " + username);
+    }
+
+    private void handleAccept(String[] parts) throws IOException {
+        if (!isAuthenticated()) {
+            sendRaw("ERROR " + errorCodes.NOT_AUTHENTICATED);
+            return;
+        }
+        if (lastChallenger == null) {
+            sendRaw("ERROR " + errorCodes.NOT_CHALLENGER_SET);
+            return;
+        }
+        if (parts.length < 2) {
+            sendRaw("ERROR " + errorCodes.NO_RESPONSE_GIVEN);
+            return;
+        }
+
+        String answer = parts[1].trim().toUpperCase();
+        ClientHandler challenger = connectedPlayers.get(lastChallenger);
+        if ("Y".equals(answer) || "YES".equals(answer)) {
+            // Start challenge stub
+            sendRaw("CHALLENGE_START " + lastChallenger + " " + username);
+
+            sendRaw("CHALLENGE_START " + lastChallenger + " " + username);
+            challenger.sendRaw("CHALLENGE_START " + lastChallenger + " " + username);
+
+            GameManager session = new GameManager(challenger, this);
+            this.setMatch(session);
+            challenger.setMatch(session);
+            Thread t = new Thread(session, "match-" + lastChallenger + "-vs-"+username);
+            t.start();
+        } else if ("N".equals(answer) || "NO".equals(answer)) {
+            // Declined
+            challenger.sendRaw("CHALLENGE_DECLINED " + username);
+        } else {
+            sendRaw("ERROR " + errorCodes.INVALID_RESPONSE);
+            return;
+        }
+        lastChallenger = null;
     }
 }
