@@ -16,7 +16,7 @@ public class ClientHandler implements Runnable {
     private BufferedReader in;
     private BufferedWriter out;
     private volatile String username = null;
-    private volatile ClientHandler lastChallenger = null;
+    private volatile ClientHandler opponent = null;
     private volatile boolean running = true;
 
     // MMR attributes
@@ -106,7 +106,7 @@ public class ClientHandler implements Runnable {
                         handlePlay(parts);
                         break;
                     case "MATCH_MSG":
-                        handleMatch(parts);
+                        handleMatchMsg(parts);
                         break;
                     case "SURRENDER":
                         handleSurrender();
@@ -157,7 +157,7 @@ public class ClientHandler implements Runnable {
     /* Setters */
     private void setLastChallenger(ClientHandler player) {
         if(!isAuthenticated()) return;
-        this.lastChallenger = player;
+        this.opponent = player;
     }
 
     public void setMatchSession(GameManager session) {
@@ -175,7 +175,7 @@ public class ClientHandler implements Runnable {
     }
 
     public boolean isChallenged() {
-        return lastChallenger != null;
+        return opponent != null;
     }
 
     // BROADCAST MESSAGES TO ALL CONNECTED PLAYERS ?
@@ -245,7 +245,7 @@ public class ClientHandler implements Runnable {
         if (sb.isEmpty()) {
             sendRaw("PLAYERS EMPTY");
         } else {
-            sendRaw("PLAYERS\tMMR\n" + sb);
+            sendRaw("PLAYERS\t\tMMR\n" + sb);
         }
     }
 
@@ -281,7 +281,7 @@ public class ClientHandler implements Runnable {
             sendRaw("ERROR " + errorCodes.NOT_AUTHENTICATED);
             return;
         }
-        if (lastChallenger == null) {
+        if (opponent == null) {
             sendRaw("ERROR " + errorCodes.NOT_CHALLENGER_SET);
             return;
         }
@@ -291,27 +291,25 @@ public class ClientHandler implements Runnable {
         }
 
         String answer = parts[1].trim().toUpperCase();
-        ClientHandler challenger = connectedPlayers.get(lastChallenger);
+        String challengerName = opponent.getUsername();
         if ("Y".equals(answer) || "YES".equals(answer)) {
             // Start challenge stub
-            sendRaw("CHALLENGE_START " + lastChallenger + " " + username);
+            sendRaw("CHALLENGE_START " + challengerName + " " + username);
 
-            sendRaw("CHALLENGE_START " + lastChallenger + " " + username);
-            challenger.sendRaw("CHALLENGE_START " + lastChallenger + " " + username);
+            sendRaw("CHALLENGE_START " + challengerName + " " + username);
+            opponent.sendRaw("CHALLENGE_START " + challengerName + " " + username);
 
-            GameManager session = new GameManager(challenger, this);
+            GameManager session = new GameManager(opponent, this);
             this.setMatchSession(session);
-            challenger.setMatchSession(session);
-            Thread t = new Thread(session, "match-" + lastChallenger + "-vs-" + username);
+            opponent.setMatchSession(session);
+            Thread t = new Thread(session, "match-" + challengerName + "-vs-" + username);
             t.start();
         } else if ("N".equals(answer) || "NO".equals(answer)) {
             // Declined
-            challenger.sendRaw("CHALLENGE_DECLINED " + username);
+            opponent.sendRaw("CHALLENGE_DECLINED " + username);
         } else {
             sendRaw("ERROR " + errorCodes.INVALID_RESPONSE);
-            return;
         }
-        lastChallenger = null;
     }
 
     private void handlePlay(String[] parts) throws IOException {
@@ -347,7 +345,7 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private void handleMatch(String[] parts) throws IOException {
+    private void handleMatchMsg(String[] parts) throws IOException {
         if (!isAuthenticated()) {
             sendRaw("ERROR " + errorCodes.NOT_AUTHENTICATED);
             return;
@@ -358,8 +356,16 @@ public class ClientHandler implements Runnable {
         }
 
         // reconstituer le message après le token MATCH_MSG
-        String payload = String.join(" ", java.util.Arrays.copyOfRange(parts, 1, parts.length));
-        matchSession.receive(username, payload);
+        StringBuilder sb = new StringBuilder();
+        sb.append("MSG_FROM ").append(username).append(" : ");
+        for(int i = 1; i < parts.length; i++) {
+            sb.append(parts[i]);
+            if (i < parts.length - 1) {
+                sb.append(" ");
+            }
+        }
+
+        opponent.send(sb.toString());
     }
 
     private void handleSurrender() throws IOException {
