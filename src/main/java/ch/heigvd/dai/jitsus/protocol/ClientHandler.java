@@ -314,4 +314,52 @@ public class ClientHandler implements Runnable {
         }
         lastChallenger = null;
     }
+
+    private void handlePlay(String[] parts) throws IOException {
+        if (!isAuthenticated()) {
+            sendRaw("ERROR " + errorCodes.NOT_AUTHENTICATED);
+            return;
+        }
+
+        if (match == null) {
+            sendRaw("ERROR " + errorCodes.NOT_IN_MATCH);
+            return;
+        }
+
+        if (parts.length < 2) {
+            sendRaw("ERROR " + errorCodes.NO_CARD_GIVEN);
+            return;
+        }
+
+        String play = parts[1].trim().toUpperCase();
+
+        switch (play) {
+            case "1":
+            case "2":
+            case "3":
+            case "4":
+            case "5":
+                match.receive(username, play);
+                sendRaw("MOVE_ACCEPTED");
+                return;
+            default:
+                sendRaw("ERROR " + errorCodes.INVALID_PLAY);
+                break;
+        }
+
+        private void handleMatch(String[] parts) throws IOException {
+            if (!isAuthenticated()) {
+                sendRaw("ERROR " + errorCodes.NOT_AUTHENTICATED);
+                return;
+            }
+            if (match == null) {
+                sendRaw("ERROR " + errorCodes.NOT_IN_MATCH); // pas en match
+                return;
+            }
+
+            // reconstituer le message après le token MATCH_MSG
+            String payload = String.join(" ", java.util.Arrays.copyOfRange(parts, 1, parts.length));
+            match.receive(username, payload);
+        }
+    }
 }
