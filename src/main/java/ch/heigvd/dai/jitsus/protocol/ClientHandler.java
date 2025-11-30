@@ -137,7 +137,7 @@ public class ClientHandler implements Runnable {
 
     /* Getters */
     public String getUsername() {
-        if (isAuthenticated()) return null;
+        if (!isAuthenticated()) return null;
         return username;
     }
 
