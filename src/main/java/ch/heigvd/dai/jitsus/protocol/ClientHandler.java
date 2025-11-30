@@ -1,7 +1,5 @@
 package ch.heigvd.dai.jitsus.protocol;
 
-import ch.heigvd.dai.test.MatchSession;
-
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
@@ -13,7 +11,7 @@ public class ClientHandler implements Runnable {
     private final Socket clientSocket;
     private final Map<String, ClientHandler> connectedPlayers;
     private final AtomicInteger connectedClients;
-    private volatile GameManager match = null;
+    private volatile GameManager matchSession = null;
 
     private BufferedReader in;
     private BufferedWriter out;
@@ -68,7 +66,7 @@ public class ClientHandler implements Runnable {
     }
 
     @Override
-    public void run (){
+    public void run() {
         try (Socket socket = clientSocket) {
             in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
             out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
@@ -162,8 +160,8 @@ public class ClientHandler implements Runnable {
         this.lastChallenger = from;
     }
 
-    public void setMatch(GameManager session) {
-        this.match = session;
+    public void setMatchSession(GameManager session) {
+        this.matchSession = session;
     }
 
     /* Utility / staus checking methods */
@@ -172,10 +170,10 @@ public class ClientHandler implements Runnable {
     }
 
     public boolean isInMatch() {
-        return match != null;
+        return matchSession != null;
     }
 
-    public boolean isChallenged () {
+    public boolean isChallenged() {
         return lastChallenger != null;
     }
 
@@ -217,11 +215,12 @@ public class ClientHandler implements Runnable {
             return;
         }
 
-        if (match != null) {
+        if (matchSession != null) {
             try {
-                match.receive(username, "DISCONNECT");
-            } catch (Exception ignored) {}
-            match = null;
+                matchSession.receive(username, "DISCONNECT");
+            } catch (Exception ignored) {
+            }
+            matchSession = null;
         }
 
         sendRaw("OK");
@@ -301,9 +300,9 @@ public class ClientHandler implements Runnable {
             challenger.sendRaw("CHALLENGE_START " + lastChallenger + " " + username);
 
             GameManager session = new GameManager(challenger, this);
-            this.setMatch(session);
-            challenger.setMatch(session);
-            Thread t = new Thread(session, "match-" + lastChallenger + "-vs-"+username);
+            this.setMatchSession(session);
+            challenger.setMatchSession(session);
+            Thread t = new Thread(session, "match-" + lastChallenger + "-vs-" + username);
             t.start();
         } else if ("N".equals(answer) || "NO".equals(answer)) {
             // Declined
@@ -321,7 +320,7 @@ public class ClientHandler implements Runnable {
             return;
         }
 
-        if (match == null) {
+        if (matchSession == null) {
             sendRaw("ERROR " + errorCodes.NOT_IN_MATCH);
             return;
         }
@@ -339,7 +338,7 @@ public class ClientHandler implements Runnable {
             case "3":
             case "4":
             case "5":
-                match.receive(username, play);
+                matchSession.receive(username, play);
                 sendRaw("MOVE_ACCEPTED");
                 return;
             default:
@@ -353,13 +352,28 @@ public class ClientHandler implements Runnable {
             sendRaw("ERROR " + errorCodes.NOT_AUTHENTICATED);
             return;
         }
-        if (match == null) {
+        if (matchSession == null) {
             sendRaw("ERROR " + errorCodes.NOT_IN_MATCH); // pas en match
             return;
         }
 
         // reconstituer le message après le token MATCH_MSG
         String payload = String.join(" ", java.util.Arrays.copyOfRange(parts, 1, parts.length));
-        match.receive(username, payload);
+        matchSession.receive(username, payload);
+    }
+
+    private void handleSurrender() throws IOException {
+        if (!isAuthenticated()) {
+            sendRaw("ERROR " + errorCodes.NOT_AUTHENTICATED);
+            return;
+        }
+        if (matchSession == null) {
+            sendRaw("ERROR " + errorCodes.NOT_IN_MATCH);
+        } else {
+            matchSession.receive(username, "SURRENDER");
+            // la session se chargera de notifier et de se fermer
+            this.setMatchSession(null);
+
+        }
     }
 }
