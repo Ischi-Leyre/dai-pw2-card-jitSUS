@@ -380,5 +380,25 @@ public class ClientHandler implements Runnable {
         }
         sendRaw("MMR " + getMmr());
     }
+    
+    /* Method call by GameManager */
+
+    public String handleMatchEnd(int score) {
+        if (!isAuthenticated()) {
+            return "ERROR " + errorCodes.NOT_AUTHENTICATED;
+        }
+
+        // check if the client is in match
+        if (!isInMatch()) {
+            return "ERROR " + errorCodes.NOT_IN_MATCH;
+        }
+
+        // Update MMR stats
+        this.score.addAndGet(score);
+        this.gamesPlayed.incrementAndGet();
+
+        this.setMatchSession(null);
+        return "OK";
+    }
 
 }
