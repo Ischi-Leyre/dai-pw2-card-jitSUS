@@ -222,7 +222,6 @@ public class ClientHandler implements Runnable {
 
         sendRaw("OK");
         running = false;
-        // here for a broadcast leave
     }
 
     private void handleGetPlayers() throws IOException {
@@ -401,4 +400,16 @@ public class ClientHandler implements Runnable {
         return "OK";
     }
 
+    /* Cleanup on disconnect */
+    private void cleanup() {
+        if (username != null) {
+            connectedPlayers.remove(username);
+            // here for a broadcast leave
+        }
+        connectedClients.decrementAndGet();
+        try {
+            if (out != null) out.flush();
+        } catch (IOException ignored) {
+        }
+    }
 }
