@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import ch.heigvd.dai.test.ClientHandler;
+import ch.heigvd.dai.jitsus.protocol.ClientHandler;
 import picocli.CommandLine;
 
 @CommandLine.Command(name = "server", description = "Start the server part of the network game.")
@@ -55,7 +55,8 @@ public class Server implements Callable<Integer> {
             }));
 
             while (!threadPool.isShutdown()) {
-                try (Socket clientSocket = serverSocket.accept()){
+                Socket clientSocket = serverSocket.accept();
+                try {
                     if (connectedClients.get() < maxClients) {
                         System.out.println("[SERVER] Connection from " + clientSocket.getRemoteSocketAddress());
                         connectedClients.incrementAndGet();
@@ -64,7 +65,7 @@ public class Server implements Callable<Integer> {
                     } else {
                         // simple backoff: accept and close or block until slot available; here just sleep briefly
                         BufferedWriter out = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream(), StandardCharsets.UTF_8));
-                        out.write("[SERVER] Max clients reached. Rejecting connection from " + clientSocket.getRemoteSocketAddress());
+                        out.write("REJECT FULL" /* Max clients reached. Rejecting connection from " + clientSocket.getRemoteSocketAddress()*/);
                         out.flush();
                         clientSocket.close();
                         out.close();
