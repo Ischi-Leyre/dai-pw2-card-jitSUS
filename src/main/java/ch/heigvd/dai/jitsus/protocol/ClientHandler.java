@@ -44,7 +44,7 @@ public class ClientHandler implements Runnable {
         NO_RESPONSE_GIVEN,
         INVALID_RESPONSE,
 
-        // Match et jeu
+        // Match and game"
         NO_CARD_GIVEN,
         INVALID_PLAY,
         NOT_IN_MATCH,
@@ -375,11 +375,11 @@ public class ClientHandler implements Runnable {
             return;
         }
         if (matchSession == null) {
-            sendRaw("ERROR " + ErrorCodes.NOT_IN_MATCH); // pas en match
+            sendRaw("ERROR " + ErrorCodes.NOT_IN_MATCH);
             return;
         }
 
-        // reconstituer le message après le token MATCH_MSG
+        //Reconstruct the message after the MATCH_MSG token
         StringBuilder sb = new StringBuilder();
         sb.append("MSG_FROM ").append(username).append(" : ");
         for (int i = 1; i < parts.length; i++) {
@@ -401,7 +401,7 @@ public class ClientHandler implements Runnable {
             sendRaw("ERROR " + ErrorCodes.NOT_IN_MATCH);
         } else {
             matchSession.receive(username, "SURRENDER");
-            // la session se chargera de notifier et de se fermer
+            // The session will take care of notifying and closing itself
             this.setMatchSession(null);
         }
     }
