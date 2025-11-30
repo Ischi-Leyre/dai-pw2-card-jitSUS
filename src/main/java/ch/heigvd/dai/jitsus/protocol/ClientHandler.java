@@ -59,7 +59,9 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    public ClientHandler(Socket clientSocket, Map<String, ClientHandler> connectedPlayers, AtomicInteger connectedClients) {
+    public ClientHandler(Socket clientSocket,
+                         Map<String, ClientHandler> connectedPlayers,
+                         AtomicInteger connectedClients) {
         this.clientSocket = clientSocket;
         this.connectedPlayers = connectedPlayers;
         this.connectedClients = connectedClients;
