@@ -346,20 +346,20 @@ public class ClientHandler implements Runnable {
                 sendRaw("ERROR " + errorCodes.INVALID_PLAY);
                 break;
         }
+    }
 
-        private void handleMatch(String[] parts) throws IOException {
-            if (!isAuthenticated()) {
-                sendRaw("ERROR " + errorCodes.NOT_AUTHENTICATED);
-                return;
-            }
-            if (match == null) {
-                sendRaw("ERROR " + errorCodes.NOT_IN_MATCH); // pas en match
-                return;
-            }
-
-            // reconstituer le message après le token MATCH_MSG
-            String payload = String.join(" ", java.util.Arrays.copyOfRange(parts, 1, parts.length));
-            match.receive(username, payload);
+    private void handleMatch(String[] parts) throws IOException {
+        if (!isAuthenticated()) {
+            sendRaw("ERROR " + errorCodes.NOT_AUTHENTICATED);
+            return;
         }
+        if (match == null) {
+            sendRaw("ERROR " + errorCodes.NOT_IN_MATCH); // pas en match
+            return;
+        }
+
+        // reconstituer le message après le token MATCH_MSG
+        String payload = String.join(" ", java.util.Arrays.copyOfRange(parts, 1, parts.length));
+        match.receive(username, payload);
     }
 }
