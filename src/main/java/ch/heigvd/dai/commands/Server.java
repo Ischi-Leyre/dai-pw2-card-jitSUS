@@ -65,10 +65,9 @@ public class Server implements Callable<Integer> {
                     } else {
                         // simple backoff: accept and close or block until slot available; here just sleep briefly
                         BufferedWriter out = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream(), StandardCharsets.UTF_8));
-                        out.write("REJECT FULL" /* Max clients reached. Rejecting connection from " + clientSocket.getRemoteSocketAddress()*/);
+                        out.write("REJECT SERVER IS FULL");
                         out.flush();
                         clientSocket.close();
-                        out.close();
                     }
                 } catch (IOException e) {
                     System.err.println("[SERVER] IO exception: " + e.getMessage());

@@ -24,17 +24,20 @@ public class ClientHandler implements Runnable {
     private AtomicInteger gamesPlayed = new AtomicInteger(0);
 
     // Error codes enum
-    private enum errorCodes {
-        // Autentification et connexion
+    private enum ErrorCodes {
+        // Authentication and connection
         NOT_AUTHENTICATED,
+        ALREADY_AUTHENTICATED,
         NO_NAME_PROVIDED,
-        INVALIDE_NAME,
+        INVALID_NAME,
         NAME_IN_USE,
 
         // Challenge
         TARGET_NOT_FOUND,
         USER_NOT_FOUND,
         NOT_CHALLENGING_SELF,
+        TARGET_ALREADY_CHALLENGED,
+        TARGET_IN_MATCH,
 
         // Accept
         NOT_CHALLENGER_SET,
@@ -143,7 +146,7 @@ public class ClientHandler implements Runnable {
         return username;
     }
 
-    private double getMmr() {
+    public double getMmr() {
         double mmr = 0;
         int games = this.gamesPlayed.get();
         int score = this.score.get();
@@ -155,17 +158,17 @@ public class ClientHandler implements Runnable {
     }
 
     /* Setters */
-    private void setLastChallenger(ClientHandler player) {
-        if(!isAuthenticated()) return;
+    private void setOpponent(ClientHandler player) {
+        if (!isAuthenticated()) return;
         this.opponent = player;
     }
 
     public void setMatchSession(GameManager session) {
-        if(!isAuthenticated()) return;
+        if (!isAuthenticated()) return;
         this.matchSession = session;
     }
 
-    /* Utility / staus checking methods */
+    /* Utility / status checking methods */
     private boolean isAuthenticated() {
         return username != null;
     }
@@ -182,25 +185,25 @@ public class ClientHandler implements Runnable {
 
     /* Handlers for commands */
     private void handleConnect(String[] parts) throws IOException {
-        if (username != null) {
-            sendRaw("ERROR " + errorCodes.NOT_AUTHENTICATED);
+        if (isAuthenticated()) {
+            sendRaw("ERROR " + ErrorCodes.ALREADY_AUTHENTICATED);
             return;
         }
 
         if (parts.length < 2) {
-            sendRaw("ERROR " + errorCodes.NO_NAME_PROVIDED);
+            sendRaw("ERROR " + ErrorCodes.NO_NAME_PROVIDED);
             return;
         }
 
         String requested = parts[1].trim();
         if (requested.isEmpty() || requested.contains(" ")) {
-            sendRaw("ERROR " + errorCodes.INVALIDE_NAME);
+            sendRaw("ERROR " + ErrorCodes.INVALID_NAME);
             return;
         }
 
         synchronized (connectedPlayers) {
             if (connectedPlayers.containsKey(requested)) {
-                sendRaw("ERROR " + errorCodes.NAME_IN_USE); // username already in use
+                sendRaw("ERROR " + ErrorCodes.NAME_IN_USE); // username already in use
                 return;
             }
             username = requested;
@@ -212,7 +215,7 @@ public class ClientHandler implements Runnable {
 
     private void handleDisconnect() throws IOException {
         if (!isAuthenticated()) {
-            sendRaw("ERROR " + errorCodes.NOT_AUTHENTICATED);
+            sendRaw("ERROR " + ErrorCodes.NOT_AUTHENTICATED);
             return;
         }
 
@@ -230,15 +233,17 @@ public class ClientHandler implements Runnable {
 
     private void handleGetPlayers() throws IOException {
         if (!isAuthenticated()) {
-            sendRaw("ERROR " + errorCodes.NOT_AUTHENTICATED);
+            sendRaw("ERROR " + ErrorCodes.NOT_AUTHENTICATED);
             return;
         }
         StringBuilder sb = new StringBuilder();
+
         for (String user : connectedPlayers.keySet()) {
+            ClientHandler handler = connectedPlayers.get(user);
             if (!user.equals(username)  // exclude self
-                    && !connectedPlayers.get(user).isInMatch() // exclude in-match
-                    && !connectedPlayers.get(user).isChallenged()) { // exclude challenged
-                sb.append(user).append("\t\t").append(getMmr()).append("\n");
+                    && !handler.isInMatch() // exclude in-match
+                    && !handler.isChallenged()) { // exclude challenged
+                sb.append(user).append("\t\t").append(handler.getMmr()).append("\n");
             }
         }
 
@@ -251,42 +256,53 @@ public class ClientHandler implements Runnable {
 
     private void handleChallenge(String[] parts) throws IOException {
         if (!isAuthenticated()) {
-            sendRaw("ERROR " + errorCodes.NOT_AUTHENTICATED);
+            sendRaw("ERROR " + ErrorCodes.NOT_AUTHENTICATED);
             return;
         }
         if (parts.length < 2) {
-            sendRaw("ERROR " + errorCodes.TARGET_NOT_FOUND);
+            sendRaw("ERROR " + ErrorCodes.TARGET_NOT_FOUND);
             return;
         }
         String target = parts[1];
         if (target.equals(username)) {
-            sendRaw("ERROR " + errorCodes.NOT_CHALLENGING_SELF);
+            sendRaw("ERROR " + ErrorCodes.NOT_CHALLENGING_SELF);
             return;
         }
         ClientHandler targetHandler = connectedPlayers.get(target);
         if (targetHandler == null) {
-            sendRaw("ERROR " + errorCodes.USER_NOT_FOUND);
+            sendRaw("ERROR " + ErrorCodes.USER_NOT_FOUND);
             return;
         }
 
-        // No game-state implemented: assume available
+        if (targetHandler.isChallenged()) {
+            sendRaw("ERROR " + ErrorCodes.TARGET_ALREADY_CHALLENGED);
+            return;
+        }
+        if (targetHandler.isInMatch()) {
+            sendRaw("ERROR " + ErrorCodes.TARGET_IN_MATCH);
+            return;
+        }
         sendRaw("CHALLENGE_SENT");
-        setLastChallenger(targetHandler);
-        targetHandler.setLastChallenger(this);
-        targetHandler.sendRaw("CHALLENGE_REQUEST " + username);
+
+        // Race condition possible here
+        synchronized ( targetHandler) {
+            setOpponent(targetHandler);
+            targetHandler.setOpponent(this);
+            targetHandler.sendRaw("CHALLENGE_REQUEST " + username);
+        }
     }
 
     private void handleAccept(String[] parts) throws IOException {
         if (!isAuthenticated()) {
-            sendRaw("ERROR " + errorCodes.NOT_AUTHENTICATED);
+            sendRaw("ERROR " + ErrorCodes.NOT_AUTHENTICATED);
             return;
         }
         if (opponent == null) {
-            sendRaw("ERROR " + errorCodes.NOT_CHALLENGER_SET);
+            sendRaw("ERROR " + ErrorCodes.NOT_CHALLENGER_SET);
             return;
         }
         if (parts.length < 2) {
-            sendRaw("ERROR " + errorCodes.NO_RESPONSE_GIVEN);
+            sendRaw("ERROR " + ErrorCodes.NO_RESPONSE_GIVEN);
             return;
         }
 
@@ -296,35 +312,43 @@ public class ClientHandler implements Runnable {
             // Start challenge stub
             sendRaw("CHALLENGE_START " + challengerName + " " + username);
 
-            sendRaw("CHALLENGE_START " + challengerName + " " + username);
+            // Notify opponent
             opponent.sendRaw("CHALLENGE_START " + challengerName + " " + username);
 
+            // Create game session
             GameManager session = new GameManager(opponent, this);
+
+            // Set match sessions
             this.setMatchSession(session);
             opponent.setMatchSession(session);
+
+            // Start game session in new thread
             Thread t = new Thread(session, "match-" + challengerName + "-vs-" + username);
             t.start();
         } else if ("N".equals(answer) || "NO".equals(answer)) {
             // Declined
             opponent.sendRaw("CHALLENGE_DECLINED " + username);
+            this.opponent = null;
+            opponent.setOpponent(null);
         } else {
-            sendRaw("ERROR " + errorCodes.INVALID_RESPONSE);
+            // Invalid response
+            sendRaw("ERROR " + ErrorCodes.INVALID_RESPONSE);
         }
     }
 
     private void handlePlay(String[] parts) throws IOException {
         if (!isAuthenticated()) {
-            sendRaw("ERROR " + errorCodes.NOT_AUTHENTICATED);
+            sendRaw("ERROR " + ErrorCodes.NOT_AUTHENTICATED);
             return;
         }
 
         if (matchSession == null) {
-            sendRaw("ERROR " + errorCodes.NOT_IN_MATCH);
+            sendRaw("ERROR " + ErrorCodes.NOT_IN_MATCH);
             return;
         }
 
         if (parts.length < 2) {
-            sendRaw("ERROR " + errorCodes.NO_CARD_GIVEN);
+            sendRaw("ERROR " + ErrorCodes.NO_CARD_GIVEN);
             return;
         }
 
@@ -340,25 +364,25 @@ public class ClientHandler implements Runnable {
                 sendRaw("MOVE_ACCEPTED");
                 return;
             default:
-                sendRaw("ERROR " + errorCodes.INVALID_PLAY);
+                sendRaw("ERROR " + ErrorCodes.INVALID_PLAY);
                 break;
         }
     }
 
     private void handleMatchMsg(String[] parts) throws IOException {
         if (!isAuthenticated()) {
-            sendRaw("ERROR " + errorCodes.NOT_AUTHENTICATED);
+            sendRaw("ERROR " + ErrorCodes.NOT_AUTHENTICATED);
             return;
         }
         if (matchSession == null) {
-            sendRaw("ERROR " + errorCodes.NOT_IN_MATCH); // pas en match
+            sendRaw("ERROR " + ErrorCodes.NOT_IN_MATCH); // pas en match
             return;
         }
 
         // reconstituer le message après le token MATCH_MSG
         StringBuilder sb = new StringBuilder();
         sb.append("MSG_FROM ").append(username).append(" : ");
-        for(int i = 1; i < parts.length; i++) {
+        for (int i = 1; i < parts.length; i++) {
             sb.append(parts[i]);
             if (i < parts.length - 1) {
                 sb.append(" ");
@@ -370,11 +394,11 @@ public class ClientHandler implements Runnable {
 
     private void handleSurrender() throws IOException {
         if (!isAuthenticated()) {
-            sendRaw("ERROR " + errorCodes.NOT_AUTHENTICATED);
+            sendRaw("ERROR " + ErrorCodes.NOT_AUTHENTICATED);
             return;
         }
         if (matchSession == null) {
-            sendRaw("ERROR " + errorCodes.NOT_IN_MATCH);
+            sendRaw("ERROR " + ErrorCodes.NOT_IN_MATCH);
         } else {
             matchSession.receive(username, "SURRENDER");
             // la session se chargera de notifier et de se fermer
@@ -384,22 +408,22 @@ public class ClientHandler implements Runnable {
 
     private void handleMmr() throws IOException {
         if (!isAuthenticated()) {
-            sendRaw("ERROR " + errorCodes.NOT_AUTHENTICATED);
+            sendRaw("ERROR " + ErrorCodes.NOT_AUTHENTICATED);
             return;
         }
         sendRaw("MMR " + getMmr());
     }
     
-    /* Method call by GameManager */
+    /* Method called by GameManager */
 
     public String handleMatchEnd(int score) {
         if (!isAuthenticated()) {
-            return "ERROR " + errorCodes.NOT_AUTHENTICATED;
+            return "ERROR " + ErrorCodes.NOT_AUTHENTICATED;
         }
 
         // check if the client is in match
         if (!isInMatch()) {
-            return "ERROR " + errorCodes.NOT_IN_MATCH;
+            return "ERROR " + ErrorCodes.NOT_IN_MATCH;
         }
 
         // Update MMR stats
@@ -412,9 +436,15 @@ public class ClientHandler implements Runnable {
 
     /* Cleanup on disconnect */
     private void cleanup() {
-        if (username != null) {
+        if (isAuthenticated() && !isInMatch()) {
             connectedPlayers.remove(username);
             // here for a broadcast leave
+        } else if (isInMatch()) {
+            try {
+                matchSession.receive(username, "DISCONNECT");
+            } catch (Exception ignored) {
+            }
+            connectedPlayers.remove(username);
         }
         connectedClients.decrementAndGet();
         try {
