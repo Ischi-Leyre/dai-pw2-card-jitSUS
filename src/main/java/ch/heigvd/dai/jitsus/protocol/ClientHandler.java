@@ -106,9 +106,6 @@ public class ClientHandler implements Runnable {
                     case "MATCH_MSG":
                         handleMatch(parts);
                         break;
-                    case "ROUND_END":
-                        handleRoundEnd();
-                        break;
                     case "SURRENDER":
                         handleSurrender();
                         break;
@@ -373,7 +370,15 @@ public class ClientHandler implements Runnable {
             matchSession.receive(username, "SURRENDER");
             // la session se chargera de notifier et de se fermer
             this.setMatchSession(null);
-
         }
     }
+
+    private void handleMmr() throws IOException {
+        if (!isAuthenticated()) {
+            sendRaw("ERROR " + errorCodes.NOT_AUTHENTICATED);
+            return;
+        }
+        sendRaw("MMR " + getMmr());
+    }
+
 }
