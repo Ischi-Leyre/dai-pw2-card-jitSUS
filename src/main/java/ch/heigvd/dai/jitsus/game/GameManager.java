@@ -1,19 +1,41 @@
+/**
+ * @author Marc Ishi et Arnaut Leyre
+**/
 package ch.heigvd.dai.jitsus.game;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.net.Socket;
-import java.nio.charset.StandardCharsets;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-
-public class GameManager {
+public class GameManager implements Runnable {
     private static final int maxRound = 13;
     private static final int deckSize = 36;
+    private final ClientHandler player1;
+    private final ClientHandler player2; 
+    private final String u1;
+    private final String u2;
 
-    GameManager() {}
+    private final BlockingQueue<QueuedMessage> queue = new LinkedBlockingQueue<>();
+    private final AtomicBoolean running = new AtomicBoolean(true);
+
+    GameManager(ClientHandler player1, ClientHandler player2) {
+        this.player1 = player1;
+        this.player2 = player2;
+        this.u1 = player1.getUsername();
+        this.u2 = player2.getUsername();
+    }
+
+    /**
+     * Receive messages from players
+     *
+     * @param from speaking player username
+     * @param message speaking player message
+     **/
+    public void receive(String from, String message) {
+        if (!running.get()) return;
+        queue.offer(new QueuedMessage(from, message));
+    }
 
     /**
      *  Take in two card descriptions and resolve their duel.
@@ -43,7 +65,6 @@ public class GameManager {
         //      if type1 wins then (type1 - type2) % 4 = 3
         //      if type2 wins then (type1 - type2) % 4 = 1
         switch ((nP1.getFam() - nP2.getFam()) % 4) {
-
             case 1:
                 res[0] = 0;
                 res[1] = 2;
@@ -72,6 +93,11 @@ public class GameManager {
         return res;
     }
 
+    /**
+     * Creates a deck used in the match.
+     *
+     * @return a new CardSus deck of 36 cards.
+     **/
     private CardSus[] createDeck() {
         CardSus[] deck = new CardSus[deckSize];
 
@@ -82,8 +108,13 @@ public class GameManager {
         return deck;
     }
 
+    /**
+     * Shuffle the deck for the next draw.
+     *
+     * @return the shuffled CardSus deck.
+     **/
     private static CardSus[] shuffleDeck(CardSus[] deck) {
-        // Mélange de Fisher-Yates, source pseudo code Wikipédia le 17.11.2025 22:15 fuseau Paris
+        // Fisher-Yates mix, source Wikipedia pseudo code on 17.11.2025 22:15 Paris time
         int j;
         for (int i = deckSize; i > 1; i--) {
             j = (int) (Math.random() * i);
@@ -96,105 +127,172 @@ public class GameManager {
         return deck;
     }
 
-    private int parseIn(BufferedReader in, BufferedWriter out) {
-        String s;
-        try {
-            s = in.readLine();
-        } catch (IOException e) {
-            return -9;
-        }
-        switch(s) {
-            case "help" :
-                //todo
-                return -2;
-            case "surender" :
-                //todo
+    /**
+     * Lissen for player choice.
+     *
+     * @return The selected card or an negative value that can be interpreted.
+     **/
+    private int parseIn(String s) {
+        switch(s.toUpperCase()) {
+            case "SURRENDER" :
                 return -3;
-            case "0" :
-                return 0;
             case "1" :
-                return 1;
+                return 0;
             case "2" :
-                return 2;
+                return 1;
             case "3" :
-                return 3;
+                return 2;
             case "4" :
+                return 3;
+            case "5" :
                 return 4;
             default :
                 return -1;
         }
     }
 
-    public void run(Socket p1, Socket p2) {
+    /**
+     * Handle loser surrendering
+     *
+     * @param loser surrendering player
+     * @param winner winning player by default
+     **/
+    private void surrender(ClientHandler loser, ClientHandler winner){
+        message(winner, loser.getUsername() + " surrendered. You won the match with 7 points!");
+        message(loser, "You surrendered. You lost the match with -7 points!");
+        
+        message(winner, winner.handleMatchEnd(7));
+        message(loser, loser.handleMatchEnd(-7));
+    }
+
+    /**
+     * send message to user and handle exeption if needed
+     *
+     * @param player player to contact
+     * @param message message to relay
+     **/
+    private void message(ClientHandler player, String message){
+        try {
+            player.send(message);
+        } catch (IOException e) {
+            System.err.println("[GameManager] Error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Follow the game to it's conclusion.
+     *
+     **/
+    public void run() {
         int[]  scores = new int[2];
         CardSus[] deck = createDeck();
 
         for (int round = 0; (round < maxRound) && (scores [0] < 7) && (scores[1] < 7); round++){
             deck = shuffleDeck(deck);
-            try (BufferedReader in1 = new BufferedReader(new InputStreamReader(p1.getInputStream(),StandardCharsets.UTF_8));
-                 BufferedReader in2 = new BufferedReader(new InputStreamReader(p2.getInputStream(),StandardCharsets.UTF_8));
-                 BufferedWriter out1 = new BufferedWriter(new OutputStreamWriter(p1.getOutputStream(),StandardCharsets.UTF_8));
-                 BufferedWriter out2 = new BufferedWriter(new OutputStreamWriter(p2.getOutputStream(),StandardCharsets.UTF_8));
-            ) {
-                // Announce hands
-                for (int i = 0; i < 5; i++){
-                    CardSus card = deck[i];
-                    out1.write("card 1: " + String.valueOf(card.getVal()) + " of " + card.familyToString() + "\n");
-                }
-                for (int i = 5; i < 10; i++){
-                    CardSus card = deck[i];
-                    out2.write("card 1: " + String.valueOf(card.getVal()) + " of " + card.familyToString() + "\n");
-                }
+            // Announce hands
+            for (int i = 0; i < 5; i++){
+                CardSus card = deck[i];
+                message(player1, "card 1: " + String.valueOf(card.getVal()) + " of " + card.familyToString());
+            }
+            for (int i = 5; i < 10; i++){
+                CardSus card = deck[i];
+                message(player2, "card 1: " + String.valueOf(card.getVal()) + " of " + card.familyToString());
+            }
 
-                // Selection of cards
-                int nP1 = -1;
-                int nP2 = -1;
+            // Selection of cards
+            int nP1 = -1;
+            int nP2 = -1;
 
-                while (nP1 < 0 || nP2 < 0){
+            while (nP1 < 0 || nP2 < 0){
+                QueuedMessage qm;
+                try {
+                    qm = queue.take();
+                } catch (InterruptedException e) {
+                    System.err.println("[GameManager] Error: " + e.getMessage());
+                    return;
+                }
+               
+                if (qm.from.equals(u1)) {
                     if (nP1 < 0) {
-                        out1.write("Please select a card by entering it's number from 0 to 4.");
-                        nP1 = parseIn(in1, out1);
-                    }
-                    if (nP2 < 0 ) {
-                        out2.write("Please select a card by entering it's number from 0 to 4.");
-                        nP2 = parseIn(in2, out2);
+                        message(player1, "Please select a card by entering it's number from 0 to 4.");
+                        nP1 = parseIn(qm.message);
+                        if (nP1 == -3) {
+                            surrender(player1, player2);
+                            return;
+                        }
                     }
                 }
-                
-                // Resolve the duel
-                CardSus cardP1 = deck[nP1];
-                CardSus cardP2 = deck[nP2];
-                String m1;
-                String m2;
+                if (qm.from.equals(u2)) {
+                    if (nP2 < 0 ) {
+                        message(player2, "Please select a card by entering it's number from 0 to 4.");
+                        nP2 = parseIn(qm.message);
+                        if (nP2 == -3) {
+                            surrender(player2, player1);
+                            return;
+                        }
+                    }
+                }
 
-                int[] res = duel(cardP1, cardP2);
-                scores[0] += res[0];
-                scores[1] += res[1];
-                if (res[0] == res[1]){
-                    m1 = "tied";
-                    m2 = "tied";
+            }
+            
+            // Resolve the duel
+            CardSus cardP1 = deck[nP1];
+            CardSus cardP2 = deck[nP2];
+            String m1;
+            String m2;
+
+            int[] res = duel(cardP1, cardP2);
+            scores[0] += res[0];
+            scores[1] += res[1];
+            if (res[0] == res[1]){
+                m1 = "tied";
+                m2 = "tied";
+            }
+            else {
+                
+                if (res[0] > res[1]) {
+                    m1 = "won";
+                    m2 = "lost";
                 }
                 else {
-                    
-                    if (res[0] > res[1]) {
-                        m1 = "won";
-                        m2 = "lost";
-                    }
-                    else {
-                        m1 = "lost";
-                        m2 = "won";
-                    }
+                    m1 = "lost";
+                    m2 = "won";
                 }
-                out1.write("You " + m1 + " against : " + String.valueOf(cardP2.getVal()) + " of " + cardP2.familyToString() + "\n");
-                out2.write("You " + m2 + " against : " + String.valueOf(cardP1.getVal()) + " of " + cardP1.familyToString() + "\n");
             }
-            catch (IOException e) {
-                System.out.println("Exception : " + e);
+            message(player1, "You " + m1 + " against : " + String.valueOf(cardP2.getVal()) + " of " + cardP2.familyToString());
+            message(player2, "You " + m2 + " against : " + String.valueOf(cardP1.getVal()) + " of " + cardP1.familyToString());
+        }
+
+        // Releasing scores;
+        if (scores[0] == scores[1]) {
+            message(player1, "You tied the match with " + scores[0] + " points!");
+            message(player2, "You tied the match with " + scores[1] + " points!");
+        }
+        else{
+            String m1;
+            String m2;
+            if (scores[0] > scores[1]) {
+                m1 = "won";
+                m2 = "lost";
             }
-            // Releasing scores;
-            /*
-            * TODO
-            */
+            else {
+                m1 = "lost";
+                m2 = "won";
+            }
+            message(player1, "You " + m1 + " the match with " + scores[0] + " points!");
+            message(player2, "You " + m2 + " the match with " + scores[1] + " points!");
+        }
+        message(player1, player1.handleMatchEnd(scores[0]));
+        message(player2, player2.handleMatchEnd(scores[1]));
+    }
+
+    // Internal class for communication
+    private static class QueuedMessage {
+        final String from;
+        final String message;
+        QueuedMessage(String from, String message) {
+            this.from = from;
+            this.message = message;
         }
     }
 }

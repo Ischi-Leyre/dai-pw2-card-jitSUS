@@ -1,12 +1,14 @@
+/**
+ * @author Marc Ishi et Arnaut Leyre
+**/
 package ch.heigvd.dai.jitsus.game;
-
 
 public class CardSus {
     public enum family {
         Knife,
-        Gun,
         Fist,
-        Acid
+        Acid,
+        Gun
     }
 
     private family fam;
@@ -21,6 +23,9 @@ public class CardSus {
         this.value = value;
     }
 
+    /**
+     * @return a string emojie version of family
+     */
     public String familyToString() {
         return switch (fam) {
             case Knife -> "\uD83D\uDD2A";
@@ -33,21 +38,6 @@ public class CardSus {
     @Override
     public String toString() {
         return familyToString() + value;
-    }
-
-    public static void main(String[] args) {
-        //CardSus[] deck = new CardSus[36];
-
-        /*int index = 0;
-        for (int v = 1; v <= 9; v++) {
-            for (family f : family.values()) {
-                deck[index++] = new CardSus(f, v);
-            }
-        }
-
-        for (var card : deck)
-            System.out.println(card);
-        */
     }
 
     public int getFam(){
