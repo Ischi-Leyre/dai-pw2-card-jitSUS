@@ -80,14 +80,14 @@ public class Client implements Callable<Integer> {
 
                 String[] tokens = line.split(" ");
                 switch (tokens[0].toUpperCase()) {
-                  case "DISCONNECT" :
-                    disconnect = true;
                   case "HELP" :
                     printFile("Documents/Message/HELP.txt");
                     break;
                   case "RULES" :
                     printFile("Documents/Message/RULES.txt");
                     break;
+                  case "DISCONNECT" :
+                    disconnect = true;
                   default:
                     // Transfer to server for handeling
                     out.write(line + "\n");
