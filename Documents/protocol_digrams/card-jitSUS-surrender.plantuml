@@ -40,7 +40,7 @@ note over s
 endnote
 
 == End of match ==
-s -> c1 : MATCH_END LOSER 0
+s -> c1 : MATCH_END LOSER -3
 s -> c2 : MATCH_END WINNER 5
 
 note over c1, c2
