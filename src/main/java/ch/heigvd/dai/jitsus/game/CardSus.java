@@ -40,7 +40,7 @@ public class CardSus {
         return familyToString() + value;
     }
 
-    public int getFam(){
+    public int famToInt(){
         return fam.ordinal();
     }
 

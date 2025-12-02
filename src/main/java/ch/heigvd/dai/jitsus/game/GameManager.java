@@ -48,7 +48,7 @@ public class GameManager implements Runnable {
         int[] res = new int[2];
 
         // Equal-Type Victory
-        if (nP1.getFam() == nP2.getFam()) {
+        if (nP1.famToInt() == nP2.famToInt()) {
             if (nP1.getVal() > nP2.getVal()) {
                 res[0] = 1;
                 res[1] = 0;
@@ -64,7 +64,7 @@ public class GameManager implements Runnable {
         // the values of the types have been assigned such as:
         //      if type1 wins then (type1 - type2) % 4 = 3
         //      if type2 wins then (type1 - type2) % 4 = 1
-        switch ((nP1.getFam() - nP2.getFam()) % 4) {
+        switch ((nP1.famToInt() - nP2.famToInt()) % 4) {
             case 1:
                 res[0] = 0;
                 res[1] = 2;
@@ -134,8 +134,6 @@ public class GameManager implements Runnable {
      **/
     private int parseIn(String s) {
         switch(s.toUpperCase()) {
-            case "SURRENDER" :
-                return -3;
             case "1" :
                 return 0;
             case "2" :
@@ -151,6 +149,7 @@ public class GameManager implements Runnable {
         }
     }
 
+
     /**
      * Handle loser surrendering
      *
@@ -158,11 +157,11 @@ public class GameManager implements Runnable {
      * @param winner winning player by default
      **/
     private void surrender(ClientHandler loser, ClientHandler winner){
-        message(winner, loser.getUsername() + " surrendered. You won the match with 7 points!");
-        message(loser, "You surrendered. You lost the match with -7 points!");
+        message(winner, "MATCH_END You won the match with 7 points!");
+        message(loser, "MATCH_END You lost the match with -7 points!");
         
-        message(winner, winner.handleMatchEnd(7));
-        message(loser, loser.handleMatchEnd(-7));
+        message(winner, "[GameManager] " + winner.handleMatchEnd(7));
+        message(loser, "[GameManager] " + loser.handleMatchEnd(-7));
     }
 
     /**
@@ -186,17 +185,18 @@ public class GameManager implements Runnable {
     public void run() {
         int[]  scores = new int[2];
         CardSus[] deck = createDeck();
+        int round;
 
-        for (int round = 0; (round < maxRound) && (scores [0] < 7) && (scores[1] < 7); round++){
+        for (round = 0; (round < maxRound) && (scores [0] < 7) && (scores[1] < 7); round++){
             deck = shuffleDeck(deck);
             // Announce hands
             for (int i = 0; i < 5; i++){
                 CardSus card = deck[i];
-                message(player1, "card 1: " + String.valueOf(card.getVal()) + " of " + card.familyToString());
+                message(player1, "card " + i + ": " + String.valueOf(card.getVal()) + " of " + card.familyToString());
             }
             for (int i = 5; i < 10; i++){
                 CardSus card = deck[i];
-                message(player2, "card 1: " + String.valueOf(card.getVal()) + " of " + card.familyToString());
+                message(player2, "card " + i + ": " + String.valueOf(card.getVal()) + " of " + card.familyToString());
             }
 
             // Selection of cards
@@ -212,11 +212,12 @@ public class GameManager implements Runnable {
                     return;
                 }
                
+                
                 if (qm.from.equals(u1)) {
                     if (nP1 < 0) {
                         message(player1, "Please select a card by entering it's number from 0 to 4.");
                         nP1 = parseIn(qm.message);
-                        if (nP1 == -3) {
+                        if (qm.message.equals("SURRENDER")) {
                             surrender(player1, player2);
                             return;
                         }
@@ -226,7 +227,7 @@ public class GameManager implements Runnable {
                     if (nP2 < 0 ) {
                         message(player2, "Please select a card by entering it's number from 0 to 4.");
                         nP2 = parseIn(qm.message);
-                        if (nP2 == -3) {
+                        if (qm.message.equals("SURRENDER")) {
                             surrender(player2, player1);
                             return;
                         }
@@ -237,7 +238,7 @@ public class GameManager implements Runnable {
             
             // Resolve the duel
             CardSus cardP1 = deck[nP1];
-            CardSus cardP2 = deck[nP2];
+            CardSus cardP2 = deck[nP2 + 5];
             String m1;
             String m2;
 
@@ -259,31 +260,37 @@ public class GameManager implements Runnable {
                     m2 = "won";
                 }
             }
-            message(player1, "You " + m1 + " against : " + String.valueOf(cardP2.getVal()) + " of " + cardP2.familyToString());
-            message(player2, "You " + m2 + " against : " + String.valueOf(cardP1.getVal()) + " of " + cardP1.familyToString());
+            message(player1, "ROUND_END You " + m1 + " against : " + String.valueOf(cardP2.getVal()) + " of " + cardP2.familyToString() + "\nNow your score is " + scores[0]);
+            message(player2, "ROUND_END You " + m2 + " against : " + String.valueOf(cardP1.getVal()) + " of " + cardP1.familyToString() + "\nNow your score is " + scores[1]);
         }
 
-        // Releasing scores;
-        if (scores[0] == scores[1]) {
-            message(player1, "You tied the match with " + scores[0] + " points!");
-            message(player2, "You tied the match with " + scores[1] + " points!");
+        // Releasing scores
+        String m1;
+        String m2;
+        if ((round == 13) && (scores[0] < 7) && (scores[1] < 7)) {
+            m1 = "lost";
+            m2 = "lost";
         }
-        else{
-            String m1;
-            String m2;
-            if (scores[0] > scores[1]) {
-                m1 = "won";
-                m2 = "lost";
+        else {
+            if (scores[0] == scores[1]) {
+                m1 = "tied";
+                m2 = "tied";
             }
-            else {
-                m1 = "lost";
-                m2 = "won";
+            else{
+                if (scores[0] > scores[1]) {
+                    m1 = "won";
+                    m2 = "lost";
+                }
+                else {
+                    m1 = "lost";
+                    m2 = "won";
+                }
             }
-            message(player1, "You " + m1 + " the match with " + scores[0] + " points!");
-            message(player2, "You " + m2 + " the match with " + scores[1] + " points!");
         }
-        message(player1, player1.handleMatchEnd(scores[0]));
-        message(player2, player2.handleMatchEnd(scores[1]));
+        message(player1, "MATCH_END You " + m1 + " the match with " + scores[0] + " points!");
+        message(player2, "MATCH_END You " + m2 + " the match with " + scores[1] + " points!");
+        message(player1, "[GameManager] " + player1.handleMatchEnd(scores[0]));
+        message(player2, "[GameManager] " + player2.handleMatchEnd(scores[1]));
     }
 
     // Internal class for communication
