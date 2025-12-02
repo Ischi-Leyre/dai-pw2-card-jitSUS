@@ -86,7 +86,7 @@ public class Client implements Callable<Integer> {
                     printFile("Documents/Message/HELP.txt");
                     break;
                   case "RULES" :
-                    printFile("Documents/Message/HELP.txt");
+                    printFile("Documents/Message/RULES.txt");
                     break;
                   default:
                     // Transfer to server for handeling
