@@ -20,7 +20,7 @@ Authentication/identification:
 
 ## Section 3 - Messages
 
-Messages sent by the client and server are lines of text. General format: COMMAND [arg1] [arg2] ...
+Messages sent by the client and server are lines of text. General format: `COMMAND [arg1] [arg2] ...`
 
 ### Connection
 
@@ -131,10 +131,14 @@ SURRENDER
 
 Response:
 - `SURRENDERED`: action accepted, game over (loser = the one who surrenders)
-- `MATCH_END <result>`: final result and updated scores
 - `ERROR <message>`:
     - `NOT AUTHENTICATED`: not connected
     - `NOT IN MATCH`: not in game
+
+Message sent to the opponent:
+```
+OPPONENT_SURRENDERED
+```
 
 ### Match MSG
 Message:
@@ -200,11 +204,11 @@ CARDS <card1> <card2> <card3> <card4> <card5>
 
 Message (Server -> Client):
 ```
-ROUND_END YOU <WINNER/ TIED / LOSER> AIGAINST : <CARD VALUE> OF <CARD TYPE> \n NOW YOUR SCORE IS <SCORE>
+ROUND_END YOU <WIN/ TIED / LOSE> AIGAINST : <CARD VALUE> OF <CARD TYPE> \n NOW YOUR SCORE IS <SCORE>
 ```
-- `WINNER` : in case of victory the match (players with the highest score)
+- `WIN` : in case of victory the match (players with the highest score)
 - `TIED` : in case of egal score
-- `LOSER` : in case of not victory (the lowest score)
+- `LOSE` : in case of not victory (the lowest score)
 - `CARD VALUE` : the value of the card played by the opponent.
 - `CARD TYPE` : the type of the card played by the opponent.
 - `SCORE`: the number of point in the match.
@@ -227,6 +231,7 @@ If the server receives a malformed or unknown command:
 ## Section 4 - Examples
 
 ### Functional example (sequence of messages)
+
 ![normal match](protocol_digrams/card-jitSUS-normal-match.png)
 
 ### Example with surrender

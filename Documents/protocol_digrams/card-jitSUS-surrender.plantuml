@@ -33,15 +33,15 @@ c2 -> s : SURRENDER
 s -> c2 : SURRENDERED_ACCEPTED
 |||
 
-s -> c1 : OPPONENT_SURRENDERED Bob
+s -> c1 : OPPONENT_SURRENDERED
 
 note over s
     At this point, the server will compute the winner according to the rules when a player surrenders.
 endnote
 
 == End of match ==
-s -> c1 : GAME_OVER 0
-s -> c2 : GAME_OVER 5
+s -> c1 : MATCH_END LOSER 0
+s -> c2 : MATCH_END WINNER 5
 
 note over c1, c2
 The disconnection part is the same as in "A Match" diagram.

@@ -14,10 +14,10 @@ c1 -> s : CONNECT alice
 s --> c1 : OK
 
 c2 -> s : CONNECT alice
-s --> c2 : ERROR 1
+s --> c2 : ERROR NAME IN USE
 
 c2 -> s : CONNECT Bob Lennon
-s --> c2 : ERROR 2
+s --> c2 : ERROR INVALID NAME
 
 note over c1, c2
 The disconnection part is the same as in "A Match" diagram.

@@ -29,39 +29,35 @@ endnote
 
 == Other Player ==
 c1 -> s : GETPLAYERS
-s -> c1 : PLAYERS Bob
+s -> c1 : PLAYERS\t\t MMR\nBob\t\t 0
 note over c1, s
     This list is composed only with player are not challenge
     or not in game in the instant T of request
 endnote
 
-== Défi ==
+== Defi ==
 c1 -> s : CHALLENGE Bob
-s -> c1 : CHALLENGE SENT
+s -> c1 : CHALLENGE_SENT
 |||
 s -> c2 : CHALLENGE_REQUEST alice
 activate c2
-'c2 -> c2 : Wait 10 seconds
 
 alt Challenge refused
     c2 -> s : ACCEPT N
     deactivate c2
     |||
-    s -> c1 : CHALLENGE_DECLINED Bob
+    s -> c1 : CHALLENGE_DECLINED
     |||
     note over s
         At this point, the client can make a new command
     endnote
-/'
-else timeout
-    s -> c1 : CHALLENGE_TIMEOUT Bob
-    |||
-'/
+
 else Challenge accepted
     activate c2
     c2 -> s : ACCEPT Y
     deactivate c2
     |||
+    s -> c1 : CHALLENGE_ACCEPTED
     s -> c1 : CHALLENGE_START alice Bob
     s -> c2 : CHALLENGE_START alice Bob
     note over s
@@ -77,37 +73,27 @@ loop nbRound <= 13 AND Player1.score() < 7 AND Player2.score() < 7
     s -> c1 : CARDS 🔪9 🔫3 👊7 👊 🧪5
     s -> c2 : CARDS 🧪6 🔫1 🔫5 🔪1 🧪9
 
-    'alt c1 does play in 30s
         c1 -> s : PLAY 1
         s -> c1 : MOVE_ACCEPTED
-    /'
-    else timeout
-        s -> s : pick random card
-    '/
-    'end
     |||
     |||
-    'alt c2 does play in 30s
         c2 -> s : PLAY 2
         s -> c2 : MOVE_ACCEPTED
-    'else timeout
-    '    s -> s : pick random card
-    'end
 
 note over s
     At this point, the server will compute the round winner according to the rules
     And save the score of each player for the whole match.
 endnote
-    s -> c1 : ROUND_RESULT 0 0
-    s -> c2 : ROUND_RESULT 2 2
+    s -> c1 : ROUND_END YOU LOSE AGAINST : 9 OF 🔪 \nNOW YOUR SCORE IS 0
+    s -> c2 : ROUND_END YOU WIN AGAINST : 1 OF 🔫 \nNOW YOUR SCORE IS 2
     end
 
 == End of match ==
 deactivate s
-s -> c1 : GAME_OVER -3
-s -> c2 : GAME_OVER 8
+s -> c1 : MATCH_END LOSER -3
+s -> c2 : MATCH_END WINNER 5
 
-== Disconnetion ==
+== Disconnection ==
 c1 -> s : DISCONNECT
 s -> c1 : OK
 s -> s : Close the connexion with c1
