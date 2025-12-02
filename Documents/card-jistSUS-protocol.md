@@ -7,16 +7,16 @@ The CardBattle protocol is a text-based (UTF-8) application protocol for an onli
 ## Section 2 - Transport Protocol
 
 - Transport: TCP
-- Server port: 6343
+- Server port: 6433 (default, configurable)
 - Encoding: UTF-8
 - The client initiates the connection.
 - After connecting, the client exchanges text messages with the server.
-- The server can close the connection at any time (e.g. timeout, disconnection).
-- Messages are terminated by a line break (`\n`). Fields are separated by spaces.
+- The server can close the connection at any time (e.g. disconnection).
+- Messages are formed by the server, except for two commands that are client-side only (HELP and RULES).
 
 Authentication/identification:
 - The client must identify itself via `CONNECT <username>` before using most commands.
-- Usernames must be unique on the server.
+- Usernames must be unique on the server and have max 12 chars.
 
 ## Section 3 - Messages
 
@@ -45,8 +45,8 @@ DISCONNECT
 
 Response:
 - `OK`: disconnection accepted (server closes connection)
-- `ERROR <message>:
-    - 1: not connected
+- `ERROR <message>`:
+    - `NOT AUTHENTICATED`: not connected
 
 ### List available players
 
@@ -59,7 +59,7 @@ Response:
 - `PLAYERS <player1> <player2> ...`: list of available players (not in a match, not on standby)
 - `PLAYERS_EMPTY`: no players available
 - `ERROR <message>`:
-    - 1: not connected
+    - `NOT AUTHENTICATED`: not connected
 
 ### Send a challenge
 
@@ -71,9 +71,12 @@ CHALLENGE <targetPlayer>
 Immediate response to the requester:
 - `CHALLENGE_SENT`: request sent
 - `ERROR <message>`:
-    - 1: target not found
-    - 2: target unavailable (already in a match or waiting)
-    - 3: not connected
+    - `NOT AUTHENTICATED`: not connected
+    - `TARGET NOT FOUND`: target player given
+    - `USER NOT FOUND`: target player does not exist
+    - `NO CHALLENGING SELF`: cannot challenge oneself
+    - `TARGET NOT AVAILABLE`: target player is not available (in match or on standby)
+    - `CHALLENGE ALREADY SENT`: challenge already sent to this player
 
 Notification sent to the target:
 - `CHALLENGE_REQUEST <fromPlayer>`
@@ -92,7 +95,16 @@ ACCEPT N
 Server behaviour:
 - If `y`: `CHALLENGE_START <player1> <player2>` is sent to both players and game initialisation.
 - If `N`: `CHALLENGE_DECLINED <fromPlayer>` sent to the challenger.
-- If no response within 10 seconds: behaviour equivalent to `N` and `CHALLENGE_TIMEOUT <fromPlayer>` sent to the challenger.
+
+Response to the target:
+- `CHALLENGE_ACCEPTED`: challenge accepted and game starting
+- `CHALLENGE_DECLINED`: challenge declined
+
+Response:
+- `ERROR <message>`:
+  - `NOT AUTHENTICATED`: not connected
+  - `NO CHALLENGE SET`: no challenge to respond to
+  - `NO RESPONSE GIVEN`: no response provided
 
 ### Play a card
 
@@ -104,12 +116,11 @@ PLAY <cardNum>
 
 Response:
 - `MOVE_ACCEPTED <cardNum>`: move accepted
-- `ROUND_RESULT <scoreUpdate>`: round result (sent to the player(s) concerned)
-- `GAME_OVER <result>`: end of the game and final score
 - `ERROR <message>`:
-    - 1: not connected
-    - 2: invalid card number (not between 1 and 5)
-    - 3: game not found
+    - `NOT AUTHENTICATED`: not connected
+    - `NOT IN MATCH`: not in game
+    - `NO CARD GIVEN` : no card number provided
+    - `INVALID PLAY`: invalid card number (not between 1 and 5)
 
 ### Abandon / Surrender
 
@@ -120,10 +131,29 @@ SURRENDER
 
 Response:
 - `SURRENDERED`: action accepted, game over (loser = the one who surrenders)
-- `GAME_OVER <result>`: final result and updated scores
+- `MATCH_END <result>`: final result and updated scores
 - `ERROR <message>`:
-    - 1: not connected
-    - 2: not in game
+    - `NOT AUTHENTICATED`: not connected
+    - `NOT IN MATCH`: not in game
+
+### Match MSG
+Message:
+```
+MATCH_MSG <message>
+```
+- `message`: text message to send to the opponent
+
+Response:
+- `MSG SENT`: message sent
+- `ERROR <message>`:
+    - `NOT AUTHENTICATED`: not connected
+    - `NOT IN MATCH`: not in game
+    - `NO MESSAGE GIVEN`: no message provided
+
+The opponent receives:
+```
+MATCH_MSG FROM <username> : <message>
+```
 
 ### Command only client side
 
@@ -156,13 +186,38 @@ Response:
 - printout of the detailed help for the specified command and the usage
 
 ### Server notifications
-### Receiving the hand of cards
+#### Receiving the hand of cards
 
 Message (Server -> Client):
 ```
 CARDS <card1> <card2> <card3> <card4> <card5>
 ```
-- `cardX`: format `<type><value>` where `type` is a character from {🔪, 🔫, 👊, 🧪} and `value` is an integer between 1 and 9.
+- `cardX`: format `<type><value>` where :
+  - `type` is a character from {🔪, 🔫, 👊, 🧪}
+  - `value` is an integer between 1 and 9.
+
+#### End of round
+
+Message (Server -> Client):
+```
+ROUND_END YOU <WINNER/ TIED / LOSER> AIGAINST : <CARD VALUE> OF <CARD TYPE> \n NOW YOUR SCORE IS <SCORE>
+```
+- `WINNER` : in case of victory the match (players with the highest score)
+- `TIED` : in case of egal score
+- `LOSER` : in case of not victory (the lowest score)
+- `CARD VALUE` : the value of the card played by the opponent.
+- `CARD TYPE` : the type of the card played by the opponent.
+- `SCORE`: the number of point in the match.
+
+#### End of match
+
+Message (Server -> Client):
+```
+MATCH_END <WINNER / LOSER> <SCORE>
+```
+- `WINNER` : in case of victory the match (players with the highest score)
+- `LOSER` : in case of not victory (egal score and the lowest score)
+- `SCORE`: the number of point in the match.
 
 ### Invalid command
 
