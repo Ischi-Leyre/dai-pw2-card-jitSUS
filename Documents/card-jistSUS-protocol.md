@@ -169,7 +169,7 @@ RULES
 ```
 
 Response:
-- printout of the game rules
+- print of the game rules
 
 #### Help
 Message:
@@ -178,16 +178,7 @@ HELP
 ```
 
 Response:
-- printout the list of available commands
-
-##### more help
-Message:
-```
-HELP <command>
-```
-
-Response:
-- printout of the detailed help for the specified command and the usage
+- print the list of available commands
 
 ### Server notifications
 #### Receiving the hand of cards
@@ -204,11 +195,11 @@ CARDS <card1> <card2> <card3> <card4> <card5>
 
 Message (Server -> Client):
 ```
-ROUND_END YOU <WIN/ TIED / LOSE> AIGAINST : <CARD VALUE> OF <CARD TYPE> \n NOW YOUR SCORE IS <SCORE>
+ROUND_END You <won / tied / lost> against : <CARD VALUE> of <CARD TYPE> \nNow your score is <SCORE>
 ```
-- `WIN` : in case of victory the match (players with the highest score)
-- `TIED` : in case of egal score
-- `LOSE` : in case of not victory (the lowest score)
+- `won` : in case of victory the match (players with the highest score)
+- `tied` : in case of egal score
+- `lost` : in case of not victory (the lowest score)
 - `CARD VALUE` : the value of the card played by the opponent.
 - `CARD TYPE` : the type of the card played by the opponent.
 - `SCORE`: the number of point in the match.
@@ -217,10 +208,11 @@ ROUND_END YOU <WIN/ TIED / LOSE> AIGAINST : <CARD VALUE> OF <CARD TYPE> \n NOW Y
 
 Message (Server -> Client):
 ```
-MATCH_END <WINNER / LOSER> <SCORE>
+MATCH_END You <won / tied / lost> the match with <SCORE> points
 ```
-- `WINNER` : in case of victory the match (players with the highest score)
-- `LOSER` : in case of not victory (egal score and the lowest score)
+- `won` : in case of victory the match (players with the highest score)
+- `lost` : in case of not victory (the lowest score, surrender or after 13 rounds)
+- `tied` : in case of egal score
 - `SCORE`: the number of point in the match.
 
 ### Invalid command

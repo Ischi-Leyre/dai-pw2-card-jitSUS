@@ -84,14 +84,14 @@ note over s
     At this point, the server will compute the round winner according to the rules
     And save the score of each player for the whole match.
 endnote
-    s -> c1 : ROUND_END YOU LOSE AGAINST : 9 OF 🔪 \nNOW YOUR SCORE IS 0
-    s -> c2 : ROUND_END YOU WIN AGAINST : 1 OF 🔫 \nNOW YOUR SCORE IS 2
+    s -> c1 : ROUND_END You lost against : 9 of 🔪 \nNow your score is 0
+    s -> c2 : ROUND_END You won against : 1 of 🔫 \nNow your score is 2
     end
 
 == End of match ==
 deactivate s
-s -> c1 : MATCH_END LOSER -3
-s -> c2 : MATCH_END WINNER 5
+s -> c1 : MATCH_END You lost the match with -3 points!
+s -> c2 : MATCH_END You won the match with 5 points!
 
 == Disconnection ==
 c1 -> s : DISCONNECT

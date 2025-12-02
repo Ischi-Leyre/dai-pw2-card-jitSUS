@@ -40,8 +40,8 @@ note over s
 endnote
 
 == End of match ==
-s -> c1 : MATCH_END LOSER -3
-s -> c2 : MATCH_END WINNER 5
+s -> c1 : MATCH_END You lost the match with -7 points!
+s -> c2 : MATCH_END You won the match with 7 points!
 
 note over c1, c2
 The disconnection part is the same as in "A Match" diagram.
