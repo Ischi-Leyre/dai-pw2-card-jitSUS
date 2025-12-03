@@ -1,0 +1,51 @@
+@startuml
+title Play Error
+
+skinparam actorStyle awesome
+skinparam participantStyle awesome
+
+actor Alice as c1
+participant Server as s
+actor Bob as c2
+
+note over s
+The connexion part is the same as in "A Match" diagram.
+endnote
+|||
+
+note over s
+    The challenge and acceptation part is the same as in "A Match" diagram.
+endnote
+
+== Match Start ==
+note over s
+The firsts rounds are the same as in "A Match" diagram.
+endnote
+|||
+== Start Round 5 ==
+s -> c1 : CARDS 🔪9 🔫3 👊7 👊8 🧪5
+s -> c2 : CARDS 🧪6 🔫1 🔫5 🔪2 🧪9
+
+c1 -> s : PLAY 1
+s -> c1 : MOVE_ACCEPTED
+
+c2 -> s : PLAY 6
+s -> c2 : ERROR INVALID MOVE
+|||
+
+c2 -> s: PLAY 3
+s -> c2 : MOVE_ACCEPTED
+|||
+note over s
+    At this point, the server will compute the round winner according to the rules.
+    And the match will continue to the end.
+endnote
+
+== End of match ==
+s -> c1 : MATCH_END LOSER -3
+s -> c2 : MATCH_END WINNER 5
+
+note over c1, c2
+The disconnection part is the same as in "A Match" diagram.
+endnote
+@enduml

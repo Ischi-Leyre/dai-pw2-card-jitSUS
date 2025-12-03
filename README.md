@@ -131,6 +131,12 @@ mvnw.cmd clean package
 > 
 > If you use the IDE IntelliJ, you can directly run the configuration **make jar file application** to automatic build the project and generate the jar file.
 
+## Protocol
+The communication between the client and server is done through text-based messages.
+We use the TCP protocol for data transport, with the server running on port 6343.
+Messages are encoded in UTF-8 and terminated by a newline character (`\n`).
+For more details and examples, please refer to the [protocol documentation](Documents/card-jistSUS-protocol.md) file.
+
 ## Usage
 
 ### The application
@@ -184,6 +190,7 @@ java -jar target/dai-pw2-card-jitSUS-1.0-SNAPSHOT.jar server -u=BobLennon -p=500
   - commit: for the commits made in browsers, name and description
   - issue: for the redaction of some issu comment
   - review: trial on clientHandler
+  - structure: help for the structure of our protocol, based on exercise given in TE 1 archives.
 
 - Reverso:
   - spelling, syntax, and reformulation : README, GitHub and comment in code: 

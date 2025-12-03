@@ -1,0 +1,49 @@
+@startuml
+title Surrender
+
+skinparam actorStyle awesome
+skinparam participantStyle awesome
+
+actor Alice as c1
+participant Server as s
+actor Bob as c2
+
+
+note over s
+The connexion part is the same as in "A Match" diagram.
+endnote
+|||
+
+note over s
+    The challenge and acceptation part is the same as in "A Match" diagram.
+endnote
+== Match Start ==
+note over s
+The firsts rounds are the same as in "A Match" diagram.
+endnote
+|||
+== Start Round 5 ==
+s -> c1 : CARDS 🔪9 🔫3 👊7 👊 🧪5
+s -> c2 : CARDS 🧪6 🔫1 🔫5 🔪1 🧪9
+
+c1 -> s : PLAY 1
+s -> c1 : MOVE_ACCEPTED
+
+c2 -> s : SURRENDER
+s -> c2 : SURRENDERED_ACCEPTED
+|||
+
+s -> c1 : OPPONENT_SURRENDERED
+
+note over s
+    At this point, the server will compute the winner according to the rules when a player surrenders.
+endnote
+
+== End of match ==
+s -> c1 : MATCH_END You lost the match with -7 points!
+s -> c2 : MATCH_END You won the match with 7 points!
+
+note over c1, c2
+The disconnection part is the same as in "A Match" diagram.
+endnote
+@enduml

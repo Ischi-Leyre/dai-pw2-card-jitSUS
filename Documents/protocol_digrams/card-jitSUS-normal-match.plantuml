@@ -1,0 +1,107 @@
+@startuml
+title A normal match
+
+skinparam actorStyle awesome
+skinparam participantStyle awesome
+
+actor Client1 as c1
+participant Server as s
+actor Client2 as c2
+
+== Connexion ==
+note over s
+    The two following connexion is in different threads
+endnote
+|||
+
+c1 -> s : CONNECT alice
+s --> c1 : OK
+note over c1, s
+    At this point, the socket will wait the client to connect on the given port.
+endnote
+|||
+
+c2 -> s : CONNECT Bob
+s --> c2 : OK
+note over c2, s
+    At this point, the socket will wait the client to connect on the given port.
+endnote
+
+== Other Player ==
+c1 -> s : GETPLAYERS
+s -> c1 : PLAYERS\t\t MMR\nBob\t\t 0
+note over c1, s
+    This list is composed only with player are not challenge
+    or not in game in the instant T of request
+endnote
+
+== Defi ==
+c1 -> s : CHALLENGE Bob
+s -> c1 : CHALLENGE_SENT
+|||
+s -> c2 : CHALLENGE_REQUEST alice
+activate c2
+
+alt Challenge refused
+    c2 -> s : ACCEPT N
+    deactivate c2
+    |||
+    s -> c1 : CHALLENGE_DECLINED
+    |||
+    note over s
+        At this point, the client can make a new command
+    endnote
+
+else Challenge accepted
+    activate c2
+    c2 -> s : ACCEPT Y
+    deactivate c2
+    |||
+    s -> c1 : CHALLENGE_ACCEPTED
+    s -> c1 : CHALLENGE_START alice Bob
+    s -> c2 : CHALLENGE_START alice Bob
+    note over s
+        At this point, the server will create a match instance in a new thread
+    endnote
+    activate s
+end
+
+
+== Match Start ==
+loop nbRound <= 13 AND Player1.score() < 7 AND Player2.score() < 7
+    == Start Round ==
+    s -> c1 : CARDS 🔪9 🔫3 👊7 👊 🧪5
+    s -> c2 : CARDS 🧪6 🔫1 🔫5 🔪1 🧪9
+
+        c1 -> s : PLAY 1
+        s -> c1 : MOVE_ACCEPTED
+    |||
+    |||
+        c2 -> s : PLAY 2
+        s -> c2 : MOVE_ACCEPTED
+
+note over s
+    At this point, the server will compute the round winner according to the rules
+    And save the score of each player for the whole match.
+endnote
+    s -> c1 : ROUND_END You lost against : 9 of 🔪 \nNow your score is 0
+    s -> c2 : ROUND_END You won against : 1 of 🔫 \nNow your score is 2
+    end
+
+== End of match ==
+deactivate s
+s -> c1 : MATCH_END You lost the match with -3 points!
+s -> c2 : MATCH_END You won the match with 5 points!
+
+== Disconnection ==
+c1 -> s : DISCONNECT
+s -> c1 : OK
+s -> s : Close the connexion with c1
+s <--> c1 : connexion closed
+|||
+c2 -> s : DISCONNECT
+s -> c2 : OK
+s -> s : Close the connexion with c2
+s <--> c2 : connexion closed
+
+@enduml
