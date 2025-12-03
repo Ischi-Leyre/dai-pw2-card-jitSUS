@@ -39,6 +39,7 @@ public class Client implements Callable<Integer> {
         description = "Username (si non fourni, sera demandé).")
     protected String username;
 
+    private static boolean disconnect;
     @Override
     public Integer call() {
 
@@ -55,13 +56,19 @@ public class Client implements Callable<Integer> {
             // CONNECT commande as stated in protocol
             out.write("CONNECT " + username + "\n");
             out.flush();
-
+            
+            disconnect = false;
             // thread to lisen to server
             Thread listener = new Thread(() -> {
                 try {
                     String serverLine;
                     while ((serverLine = in.readLine()) != null) {
                         System.out.println(serverLine);
+                        if(serverLine.equals("SERVER_SHUTDOWN")){
+                            disconnect = true;
+                            return 0;
+                        }
+                        
                     }
                 } catch (IOException e) {
                     System.err.println("[CLIENT] Error reading from server: " + e.getMessage());
@@ -70,7 +77,7 @@ public class Client implements Callable<Integer> {
             listener.setDaemon(true);
             listener.start();
 
-            boolean disconnect = false;
+            
             // User command handeling
             while (!disconnect) {
                 System.out.print("> ");
