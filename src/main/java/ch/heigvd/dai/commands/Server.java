@@ -84,6 +84,9 @@ public class Server implements Callable<Integer> {
 
     private void shutdown() {
         if (threadPool != null && !threadPool.isShutdown()) {
+            for (ClientHandler h : connectedPlayers.values()) {
+                h.shutdown();
+            }
             threadPool.shutdown();
             try {
                 if (!threadPool.awaitTermination(5, TimeUnit.SECONDS)) {
