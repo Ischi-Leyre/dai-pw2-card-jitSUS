@@ -18,6 +18,9 @@
     - [Server](#Server)
     - [Client](#Client)
   - [Docker](#Docker)
+    - [Local Docker](#Local_Docker)
+    - [Container registry](#Container_registry)
+    - [Run Docker](#Run_Docker)
 - [Sources](#Sources)
 - [Authors](#authors)
 - [References](#references)
@@ -179,6 +182,37 @@ java -jar target/dai-pw2-card-jitSUS-1.0-SNAPSHOT.jar server -u=BobLennon -p=500
 ~~~
 
 ### Docker
+
+#### Local Docker
+If you have acces to the repo you can build a new image with the following command
+~~~bash
+docker build -t card-jitsus .
+~~~
+
+#### Container registry
+You also have the option to use GitHub Container Registry to obtain the Docker image.
+~~~bash
+# Pull the image from GitHub Container Registry
+docker pull ghcr.io/<username>/java-ios-docker
+~~~
+
+#### Run Docker
+Card-jitsus is a TCP application, thus you will need to create a Docker network to run it with Docker.
+**Create network**
+~~~bash
+docker network create heig-vd-dai
+~~~
+Here are examples of commands to run the application with docker. You can use the options presented in the Server and Client sections above
+**Run server**
+~~~bash
+docker run --rm -it --network heig-vd-dai --name my-server card-jitsus server -H=my-server
+~~~
+**Run Client**
+~~~bash
+docker run --rm -it --network heig-vd-dai card-jitsus client -H=my-server
+~~~
+
+
 
 ## Sources
 - ChatGPT :
