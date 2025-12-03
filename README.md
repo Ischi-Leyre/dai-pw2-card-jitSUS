@@ -189,7 +189,16 @@ docker build -t card-jitsus .
 ~~~
 
 #### Container registry
-You also have the option to use GitHub Container Registry to obtain the Docker image.
+**Publication**
+the package was published with the following commands:
+~~~bash
+# use token to log in
+docker login ghcr.io -u Arnaut
+docker tag card-jitsus ghcr.io/ischi-leyre/card-jitsus:latest
+docker push ghcr.io/ischi-leyre/card-jitsus:latest
+~~~
+
+You have the option to use GitHub Container Registry to obtain the Docker image instead of building it yourself.
 ~~~bash
 docker pull ghcr.io/ischi-leyre/card-jitsus:latest
 ~~~
