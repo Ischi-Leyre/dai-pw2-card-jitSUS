@@ -40,7 +40,7 @@ public class Client implements Callable<Integer> {
         description = "Username (si non fourni, sera demandé).")
     protected String username;
 
-    private static AtomicBoolean disconnect;
+    private static AtomicBoolean disconnect = new AtomicBoolean(false);
     @Override
     public Integer call() {
 
@@ -51,14 +51,11 @@ public class Client implements Callable<Integer> {
              BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8))) {
             
             System.out.println("[CLIENT] Connected to " + host + ":" + port);
-            
-            if(getUsername(scanner,in) < 0) return -1;
 
-            // CONNECT commande as stated in protocol
-            out.write("CONNECT " + username + "\n");
-            out.flush();
+            // Get and validate username
+            if(getUsername(scanner,in, out) < 0) return -1;
             
-            disconnect = false;
+            disconnect.set(false);
             // thread to lisen to server
             Thread listener = new Thread(() -> {
                 try {
@@ -66,8 +63,8 @@ public class Client implements Callable<Integer> {
                     while ((serverLine = in.readLine()) != null) {
                         System.out.println(serverLine);
                         if(serverLine.equals("SERVER_SHUTDOWN")){
-                            disconnect = true;
-                            return 0;
+                            disconnect.set(true);
+                            return;
                         }
                         
                     }
@@ -80,7 +77,7 @@ public class Client implements Callable<Integer> {
 
             
             // User command handeling
-            while (!disconnect) {
+            while (!disconnect.get()) {
                 System.out.print("> ");
                 if (!scanner.hasNextLine()) break;
                 String line = scanner.nextLine().trim();
@@ -95,9 +92,9 @@ public class Client implements Callable<Integer> {
                     printFile("Documents/Message/RULES.txt");
                     break;
                   case "DISCONNECT" :
-                    disconnect = true;
+                    disconnect.set(true);
                   default:
-                    // Transfer to server for handeling
+                    // Transfer to server for handling
                     out.write(line + "\n");
                     out.flush();
                 }
@@ -122,9 +119,9 @@ public class Client implements Callable<Integer> {
      *
      * @return Integer for execution status.
      **/
-    private int getUsername(Scanner scanner, BufferedReader in) {
+    private int getUsername(Scanner scanner, BufferedReader in, BufferedWriter out) {
         boolean gotUserName = false;
-        while(!gotUserName){
+        while(!gotUserName) {
             if (username == null || username.trim().isEmpty() || username.length() > 12) {
                 System.out.print("Username (Max 12 char): ");
                 if (scanner.hasNextLine()) {
@@ -134,20 +131,22 @@ public class Client implements Callable<Integer> {
                     return -1;
                 }
             }
-            else{
-                try {
-                    String serverLine;
-                    while ((serverLine = in.readLine()) != null) {
-                        if (serverLine.equals("OK")){
-                            gotUserName = true;
-                            break;
-                        }
-                        System.out.println("Username : " + serverLine + "is not available.");
-                    }
-                } catch (IOException e) {
-                    System.err.println("[CLIENT] Error reading from server: " + e.getMessage());
-                    return -1;
+
+            try {
+                // Send CONNECT command to server to check username availability
+                out.write("CONNECT " + username + "\n");
+                out.flush();
+
+                String serverResponse = in.readLine();
+                if (serverResponse != null && serverResponse.equals("OK")) {
+                    gotUserName = true;
+                } else if (serverResponse.equals("ERROR Name In Use")){
+                    System.out.println("Username '" + username + "' is not available. Please choose another one.");
+                    username = null; // Reset username to prompt again
                 }
+            } catch (IOException e) {
+                System.err.println("[CLIENT] Error reading from server: " + e.getMessage());
+                return -1;
             }
         }
         return 0;

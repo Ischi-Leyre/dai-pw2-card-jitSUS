@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import ch.heigvd.dai.jitsus.protocol.ClientHandler;
 
 public class GameManager implements Runnable {
     private static final int maxRound = 13;
@@ -19,7 +20,7 @@ public class GameManager implements Runnable {
     private final BlockingQueue<QueuedMessage> queue = new LinkedBlockingQueue<>();
     private final AtomicBoolean running = new AtomicBoolean(true);
 
-    GameManager(ClientHandler player1, ClientHandler player2) {
+    public GameManager(ClientHandler player1, ClientHandler player2) {
         this.player1 = player1;
         this.player2 = player2;
         this.u1 = player1.getUsername();

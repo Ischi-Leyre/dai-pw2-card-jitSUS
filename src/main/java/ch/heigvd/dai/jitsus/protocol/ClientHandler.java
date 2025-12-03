@@ -5,6 +5,7 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import ch.heigvd.dai.jitsus.game.GameManager;
 
 public class ClientHandler implements Runnable {
 
@@ -77,8 +78,6 @@ public class ClientHandler implements Runnable {
             in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
             out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
 
-            // Prompt minimal (optional)
-            sendRaw("WELCOME to the Game Card jitSUS");
 
             String line;
             while (running && (line = in.readLine()) != null) {
@@ -209,6 +208,8 @@ public class ClientHandler implements Runnable {
             username = requested;
             connectedPlayers.put(username, this);
             sendRaw("OK");
+            // Welcome message
+            sendRaw("WELCOME to the Game Card jitSUS");
         }
     }
 
