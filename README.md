@@ -105,7 +105,7 @@ git clone https://github.com/Ischi-Leyre/dai-pw2-card-jitSUS.git
 
 2. Navigate to the project directory
 ~~~bash
-cd dai-pw2-jitSUS
+cd dai-pw2-card-jitSUS
 ~~~
 
 ### For Linux / MacOS
@@ -132,7 +132,7 @@ mvnw.cmd clean package
 
 > [!NOTE]
 > 
-> If you use the IDE IntelliJ, you can directly run the configuration **make jar file application** to automatic build the project and generate the jar file.
+> If you use the IDE IntelliJ, you can directly run the configuration **Package application as JAR file** to automatic build the project and generate the jar file.
 
 ## Protocol
 The communication between the client and server is done through text-based messages.
@@ -146,7 +146,6 @@ For more details and examples, please refer to the [protocol documentation](Docu
 
 #### Structure
 The jar file is in the folder `target` with the name `dai-pw2-card-jitSUS-1.0-SNAPSHOT.jar`.
-The input and output files are in the folder `IOFiles`.
 
 #### Commands
 The application can be used with two commands:
@@ -192,22 +191,25 @@ docker build -t card-jitsus .
 #### Container registry
 You also have the option to use GitHub Container Registry to obtain the Docker image.
 ~~~bash
-# Pull the image from GitHub Container Registry
-docker pull ghcr.io/<username>/java-ios-docker
+docker pull ghcr.io/ischi-leyre/card-jitsus:latest
 ~~~
 
 #### Run Docker
 Card-jitsus is a TCP application, thus you will need to create a Docker network to run it with Docker.
+
 **Create network**
 ~~~bash
 docker network create heig-vd-dai
 ~~~
-Here are examples of commands to run the application with docker. You can use the options presented in the Server and Client sections above
-**Run server**
+Here are examples of commands to run the application with docker. You can use the options presented in the Server and Client sections above.
+
+**Run server:**
+create a server that oparates on port 6433.
 ~~~bash
 docker run --rm -it --network heig-vd-dai --name my-server card-jitsus server -H=my-server
 ~~~
-**Run Client**
+**Run Client:**
+create a client that operates on port 6433 with a username to be specified at connection.
 ~~~bash
 docker run --rm -it --network heig-vd-dai card-jitsus client -H=my-server
 ~~~
@@ -222,8 +224,9 @@ docker run --rm -it --network heig-vd-dai card-jitsus client -H=my-server
 
 - GitHub Copilot:
   - commit: for the commits made in browsers, name and description
-  - issue: for the redaction of some issu comment
-  - review: trial on clientHandler
+  - issue: for the redaction of some issue description
+  - pull request: for the redaction of some pull request description
+  - review : trial on clientHandler not all implemented, because lack of knowledge
   - structure: help for the structure of our protocol, based on exercise given in TE 1 archives.
 
 - Reverso:
@@ -233,7 +236,7 @@ docker run --rm -it --network heig-vd-dai card-jitsus client -H=my-server
     - Code: function and block comment
 
 - Wikipedia:
-  - pseudo code: Fisher-Yates mix
+  - pseudo code: Fisher-Yates mix, 17.11.2025 22:15 Paris time
 <footer style="padding: 1rem; background-color: rgba(0,0,0,0); border-top: 1px solid rgba(0,0,0,0);">
   <div style="display: flex; justify-content: center; gap: 4rem; flex-wrap: wrap; text-align: center;">
     <div>
