@@ -32,6 +32,7 @@ CONNECT <username>
 Response:
 - `OK`: connection accepted
 - `ERROR <message>`:
+    - `ALREADY AUTHENTICATED` : the user is already connected
     - `NO NAME PROVIDED` : no username provided
     - `NAME IN USE` : username already in use
     - `INVALID NAME` : username contains invalid characters (no spaces allowed)
@@ -94,11 +95,10 @@ ACCEPT N
 
 Server behaviour:
 - If `y`: `CHALLENGE_START <player1> <player2>` is sent to both players and game initialisation.
-- If `N`: `CHALLENGE_DECLINED <fromPlayer>` sent to the challenger.
 
 Response to the target:
-- `CHALLENGE_ACCEPTED`: challenge accepted and game starting
-- `CHALLENGE_DECLINED`: challenge declined
+- If `y`: `CHALLENGE_ACCEPTED`: challenge accepted and game starting
+- If `N`:`CHALLENGE_DECLINED`: challenge declined
 
 Response:
 - `ERROR <message>`:
@@ -156,8 +156,19 @@ Response:
 
 The opponent receives:
 ```
-MATCH_MSG FROM <username> : <message>
+MSG_FROM <username> : <message>
 ```
+
+### MMR
+Message:
+```
+MMR
+```
+
+Response:
+- `MMR <value mmr>`
+- `Error <message>`:
+    - `NOT AUTHENTICATED`: not connected
 
 ### Command only client side
 
@@ -214,6 +225,15 @@ MATCH_END You <won / tied / lost> the match with <SCORE> points
 - `lost` : in case of not victory (the lowest score, surrender or after 13 rounds)
 - `tied` : in case of egal score
 - `SCORE`: the number of point in the match.
+
+#### Shutdown server
+
+Message (Server -> Client):
+```
+SERVER_SHUTDOWN
+```
+
+Give the information the server is down and close every threads and ask the client to close
 
 ### Invalid command
 
