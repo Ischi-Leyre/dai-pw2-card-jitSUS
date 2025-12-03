@@ -36,8 +36,8 @@ public class ClientHandler implements Runnable {
         TARGET_NOT_FOUND,
         USER_NOT_FOUND,
         NOT_CHALLENGING_SELF,
-        TARGET_ALREADY_CHALLENGED,
-        TARGET_IN_MATCH,
+        TARGET_NOT_AVAILABLE,
+        CHALLENGE_ALREADY_SENT,
 
         // Accept
         NOT_CHALLENGER_SET,
@@ -48,6 +48,7 @@ public class ClientHandler implements Runnable {
         NO_CARD_GIVEN,
         INVALID_PLAY,
         NOT_IN_MATCH,
+        NO_MESSAGE_GIVEN,
         INVALID_COMMAND;
 
         @Override
@@ -86,7 +87,7 @@ public class ClientHandler implements Runnable {
                     continue;
                 }
 
-                String[] parts = line.split("\\s+");
+                String[] parts = line.split("\\s+"); // split by whitespace generate with code auto-completion
                 String cmd = parts[0].toUpperCase();
 
                 switch (cmd) {
@@ -108,11 +109,11 @@ public class ClientHandler implements Runnable {
                     case "PLAY":
                         handlePlay(parts);
                         break;
-                    case "MATCH_MSG":
-                        handleMatchMsg(parts);
-                        break;
                     case "SURRENDER":
                         handleSurrender();
+                        break;
+                    case "MATCH_MSG":
+                        handleMatchMsg(parts);
                         break;
                     case "MMR":
                         handleMmr();
@@ -122,7 +123,8 @@ public class ClientHandler implements Runnable {
                 }
             }
         } catch (IOException e) {
-            // client likely disconnected unexpectedly
+            if (running)
+                System.err.println("IO exception with client " + username + ": " + e.getMessage());
         } finally {
             cleanup();
         }
@@ -181,8 +183,6 @@ public class ClientHandler implements Runnable {
         return opponent != null;
     }
 
-    // BROADCAST MESSAGES TO ALL CONNECTED PLAYERS ?
-
     /* Handlers for commands */
     private void handleConnect(String[] parts) throws IOException {
         if (isAuthenticated()) {
@@ -209,7 +209,6 @@ public class ClientHandler implements Runnable {
             username = requested;
             connectedPlayers.put(username, this);
             sendRaw("OK");
-            // Here for a broadcast join
         }
     }
 
@@ -274,12 +273,12 @@ public class ClientHandler implements Runnable {
             return;
         }
 
-        if (targetHandler.isChallenged()) {
-            sendRaw("ERROR " + ErrorCodes.TARGET_ALREADY_CHALLENGED);
+        if (targetHandler.isChallenged() || targetHandler.isInMatch()) {
+            sendRaw("ERROR " + ErrorCodes.TARGET_NOT_AVAILABLE);
             return;
         }
-        if (targetHandler.isInMatch()) {
-            sendRaw("ERROR " + ErrorCodes.TARGET_IN_MATCH);
+        if (targetHandler == this.opponent) {
+            sendRaw("ERROR " + ErrorCodes.CHALLENGE_ALREADY_SENT);
             return;
         }
         sendRaw("CHALLENGE_SENT");
@@ -308,7 +307,10 @@ public class ClientHandler implements Runnable {
 
         String answer = parts[1].trim().toUpperCase();
         String challengerName = opponent.getUsername();
-        if ("Y".equals(answer) || "YES".equals(answer)) {
+        if ("Y".equals(answer)) {
+            // Accepted
+            opponent.sendRaw("CHALLENGE_ACCEPTED");
+
             // Start challenge stub
             sendRaw("CHALLENGE_START " + challengerName + " " + username);
 
@@ -325,9 +327,9 @@ public class ClientHandler implements Runnable {
             // Start game session in new thread
             Thread t = new Thread(session, "match-" + challengerName + "-vs-" + username);
             t.start();
-        } else if ("N".equals(answer) || "NO".equals(answer)) {
+        } else if ("N".equals(answer)) {
             // Declined
-            opponent.sendRaw("CHALLENGE_DECLINED " + username);
+            opponent.sendRaw("CHALLENGE_DECLINED");
             this.opponent = null;
             opponent.setOpponent(null);
         } else {
@@ -369,13 +371,33 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private void handleMatchMsg(String[] parts) throws IOException {
+    private void handleSurrender() throws IOException {
         if (!isAuthenticated()) {
             sendRaw("ERROR " + ErrorCodes.NOT_AUTHENTICATED);
             return;
         }
         if (matchSession == null) {
             sendRaw("ERROR " + ErrorCodes.NOT_IN_MATCH);
+        } else {
+            matchSession.receive(username, "SURRENDER");
+            // The session will take care of notifying and closing itself
+            this.setMatchSession(null);
+        }
+    }
+
+    private void handleMatchMsg(String[] parts) throws IOException {
+        if (!isAuthenticated()) {
+            sendRaw("ERROR " + ErrorCodes.NOT_AUTHENTICATED);
+            return;
+        }
+
+        if (matchSession == null) {
+            sendRaw("ERROR " + ErrorCodes.NOT_IN_MATCH);
+            return;
+        }
+
+        if (parts.length < 2) {
+            sendRaw("ERROR " + ErrorCodes.NO_MESSAGE_GIVEN);
             return;
         }
 
@@ -390,20 +412,6 @@ public class ClientHandler implements Runnable {
         }
 
         opponent.send(sb.toString());
-    }
-
-    private void handleSurrender() throws IOException {
-        if (!isAuthenticated()) {
-            sendRaw("ERROR " + ErrorCodes.NOT_AUTHENTICATED);
-            return;
-        }
-        if (matchSession == null) {
-            sendRaw("ERROR " + ErrorCodes.NOT_IN_MATCH);
-        } else {
-            matchSession.receive(username, "SURRENDER");
-            // The session will take care of notifying and closing itself
-            this.setMatchSession(null);
-        }
     }
 
     private void handleMmr() throws IOException {
@@ -438,7 +446,7 @@ public class ClientHandler implements Runnable {
     private void cleanup() {
         if (isAuthenticated() && !isInMatch()) {
             connectedPlayers.remove(username);
-            // here for a broadcast leave
+
         } else if (isInMatch()) {
             try {
                 matchSession.receive(username, "DISCONNECT");
@@ -449,6 +457,42 @@ public class ClientHandler implements Runnable {
         connectedClients.decrementAndGet();
         try {
             if (out != null) out.flush();
+        } catch (IOException ignored) {
+        }
+    }
+
+    /**
+     * Demande au ClientHandler de s'arrêter proprement depuis le thread serveur.
+     * Ferme la socket pour débloquer readLine() et notifie la session si nécessaire.
+     * Generate by GitHub Copilot GPT-5 mini
+     */
+    public void shutdown() {
+        running = false;
+        // if the client is in match, close the match session
+        try {
+            if (matchSession != null) {
+                matchSession.receive(username, "DISCONNECT");
+                matchSession = null;
+            }
+        } catch (Exception ignored) {
+        }
+        try {
+            sendRaw("SERVER_SHUTDOWN");
+        } catch (IOException ignored) {
+        }
+
+        // close the socket to unblock the thread
+        try {
+            clientSocket.close();
+        } catch (IOException ignored) {
+        }
+
+        try {
+            if (in != null) in.close();
+        } catch (IOException ignored) {
+        }
+        try {
+            if (out != null) out.close();
         } catch (IOException ignored) {
         }
     }
