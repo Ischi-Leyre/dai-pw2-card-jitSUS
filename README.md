@@ -12,7 +12,13 @@
   - [For Linux / MacOS](#for-linux--macos)
   - [For Windows](#for-windows)
 - [Usage](#usage)
-- [Utilisation IA](#utilisation-ia)
+  - [The application](#The_application)
+    - [Structure](#Structure)
+    - [Commands](#Commands)
+    - [Server](#Server)
+    - [Client](#Client)
+  - [Docker](#Docker)
+- [Sources](#Sources)
 - [Authors](#authors)
 - [References](#references)
 
@@ -85,18 +91,18 @@ These following instructions will help you to get a copy of the project up and r
 <div style="display: flex; gap: 20px;">
   <pre><code class="language-bash">
 # Clone with SSH
-git clone git@github.com:Ischi-Leyre/dai-pw2.git
+git clone git@github.com:Ischi-Leyre/dai-pw2-card-jitSUS.git
   </code></pre>
 
   <pre><code class="language-bash">
 # Clone with HTTPS
-git clone https://github.com/Ischi-Leyre/dai-pw2.git
+git clone https://github.com/Ischi-Leyre/dai-pw2-card-jitSUS.git
   </code></pre>
 </div>
 
 2. Navigate to the project directory
 ~~~bash
-cd dai-pw2
+cd dai-pw2-jitSUS
 ~~~
 
 ### For Linux / MacOS
@@ -123,13 +129,52 @@ mvnw.cmd clean package
 
 > [!NOTE]
 > 
-> If you use the IDE IntelliJ, yon can directly run the configuration **make jar file application** to automatic build the project and generate the jar file.
+> If you use the IDE IntelliJ, you can directly run the configuration **make jar file application** to automatic build the project and generate the jar file.
 
 ## Usage
 
-**TODO**
+### The application
 
-## Utilisation IA
+#### Structure
+The jar file is in the folder `target` with the name `dai-pw2-card-jitSUS-1.0-SNAPSHOT.jar`.
+The input and output files are in the folder `IOFiles`.
+
+#### Commands
+The application can be used with two commands:
+- `server` execute application in server mode
+- `client` execute application in client mode
+
+#### Server
+options :
+- '-p' or '--port' Port to use (default: 6433).
+- '-m' or '--max-clients' Maximum number of clients (default: 10).
+- '-H' or '--host' Host to use (default: localhost).
+~~~bash
+java -jar target/dai-pw2-card-jitSUS-1.0-SNAPSHOT.jar server [-p,-m,-H]=<value>
+~~~
+**Example:**
+create a serve that can handle 4 client max and oparate on port 5000
+~~~bash
+java -jar target/dai-pw2-card-jitSUS-1.0-SNAPSHOT.jar server -m=4 -p=5000
+~~~
+
+#### Client
+options :
+- '-p' or '--port' Port to use (default: 6433).
+- '-H' or '--host' Host to use (default: localhost).
+- '-u' or '--username' "Username 12 char max(if not given will be asked)."
+~~~bash
+java -jar target/dai-pw2-card-jitSUS-1.0-SNAPSHOT.jar client [-p,-H,-u]=<value>
+~~~
+**Example:**
+create a client named BobLennon client max and oparate on port 5000
+~~~bash
+java -jar target/dai-pw2-card-jitSUS-1.0-SNAPSHOT.jar server -u=BobLennon -p=5000
+~~~
+
+### Docker
+
+## Sources
 - ChatGPT :
   - Issue template: correction and help for the structure.
   - README: help for the integration HTML code (i.e. footer)
@@ -137,6 +182,8 @@ mvnw.cmd clean package
 
 - GitHub Copilot:
   - commit: for the commits made in browsers, name and description
+  - issue: for the redaction of some issu comment
+  - review: trial on clientHandler
 
 - Reverso:
   - spelling, syntax, and reformulation : README, GitHub and comment in code: 
@@ -144,6 +191,8 @@ mvnw.cmd clean package
     - GitHub
     - Code: function and block comment
 
+- Wikipedia:
+  - pseudo code: Fisher-Yates mix
 <footer style="padding: 1rem; background-color: rgba(0,0,0,0); border-top: 1px solid rgba(0,0,0,0);">
   <div style="display: flex; justify-content: center; gap: 4rem; flex-wrap: wrap; text-align: center;">
     <div>
