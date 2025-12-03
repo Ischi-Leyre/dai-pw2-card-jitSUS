@@ -16,6 +16,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import picocli.CommandLine;
 
@@ -39,7 +40,7 @@ public class Client implements Callable<Integer> {
         description = "Username (si non fourni, sera demandé).")
     protected String username;
 
-    private static boolean disconnect;
+    private static AtomicBoolean disconnect;
     @Override
     public Integer call() {
 
