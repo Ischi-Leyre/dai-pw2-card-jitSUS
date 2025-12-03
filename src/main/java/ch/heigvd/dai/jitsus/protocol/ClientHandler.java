@@ -331,8 +331,8 @@ public class ClientHandler implements Runnable {
         } else if ("N".equals(answer)) {
             // Declined
             opponent.sendRaw("CHALLENGE_DECLINED");
-            this.opponent = null;
             opponent.setOpponent(null);
+            this.opponent = null;
         } else {
             // Invalid response
             sendRaw("ERROR " + ErrorCodes.INVALID_RESPONSE);
@@ -382,7 +382,6 @@ public class ClientHandler implements Runnable {
         } else {
             matchSession.receive(username, "SURRENDER");
             // The session will take care of notifying and closing itself
-            this.setMatchSession(null);
         }
     }
 
@@ -440,6 +439,7 @@ public class ClientHandler implements Runnable {
         this.gamesPlayed.incrementAndGet();
 
         this.setMatchSession(null);
+        this.setOpponent(null);
         return "OK";
     }
 

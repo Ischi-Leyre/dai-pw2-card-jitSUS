@@ -100,11 +100,14 @@ public class GameManager implements Runnable {
      * @return a new CardSus deck of 36 cards.
      **/
     private CardSus[] createDeck() {
+        int families = CardSus.family.values().length;
         CardSus[] deck = new CardSus[deckSize];
 
         for (int v = 1; v <= 9; v++)
-            for (CardSus.family f : CardSus.family.values())
-                deck[(v - 1) * f.ordinal()] = new CardSus(f, v);
+            for (CardSus.family f : CardSus.family.values()) {
+                int index = (v - 1) * families + f.ordinal();
+                deck[index] = new CardSus(f, v);
+            }
 
         return deck;
     }
@@ -114,18 +117,16 @@ public class GameManager implements Runnable {
      *
      * @return the shuffled CardSus deck.
      **/
-    private static CardSus[] shuffleDeck(CardSus[] deck) {
+    private static void shuffleDeck(CardSus[] deck) {
         // Fisher-Yates mix, source Wikipedia pseudo code on 17.11.2025 22:15 Paris time
         int j;
-        for (int i = deckSize; i > 1; i--) {
-            j = (int) (Math.random() * i);
+        for (int i = deckSize -1 ; i > 0; i--) {
+            j = (int) (Math.random() * (i + 1));
 
             CardSus s = deck[i];
             deck[i] = deck[j];
             deck[j] = s;
         }
-
-        return deck;
     }
 
     /**
@@ -161,8 +162,19 @@ public class GameManager implements Runnable {
         message(winner, "MATCH_END You won the match with 7 points!");
         message(loser, "MATCH_END You lost the match with -7 points!");
         
-        message(winner, "[GameManager] " + winner.handleMatchEnd(7));
-        message(loser, "[GameManager] " + loser.handleMatchEnd(-7));
+       System.out.println("[GameManager] " + winner.getUsername() + " " + winner.handleMatchEnd(7));
+       System.out.println("[GameManager] " + loser.getUsername()  + " " + loser.handleMatchEnd(-7));
+    }
+
+    /**
+     * Handle loser surrendering
+     *
+     * @param winner winning player by default
+     **/
+    private void disconnect(ClientHandler winner){
+        message(winner, "MATCH_END Your opponent disconnected, you win the match with 7 points!");
+
+        System.out.println("[GameManager] " + winner.getUsername() + " " + winner.handleMatchEnd(7));
     }
 
     /**
@@ -189,15 +201,18 @@ public class GameManager implements Runnable {
         int round;
 
         for (round = 0; (round < maxRound) && (scores [0] < 7) && (scores[1] < 7); round++){
-            deck = shuffleDeck(deck);
+            shuffleDeck(deck);
             // Announce hands
+            message(player1, "Please select a card by entering it's number from 1 to 5.");
             for (int i = 0; i < 5; i++){
                 CardSus card = deck[i];
-                message(player1, "card " + i + ": " + String.valueOf(card.getVal()) + " of " + card.familyToString());
+                message(player1, "card " + (i + 1) + ": " + card.getVal() + " of " + card.familyToString());
             }
+
+            message(player2, "Please select a card by entering it's number from 1 to 5.");
             for (int i = 5; i < 10; i++){
                 CardSus card = deck[i];
-                message(player2, "card " + i + ": " + String.valueOf(card.getVal()) + " of " + card.familyToString());
+                message(player2, "card " + (i - 4) + ": " + card.getVal() + " of " + card.familyToString());
             }
 
             // Selection of cards
@@ -212,11 +227,10 @@ public class GameManager implements Runnable {
                     System.err.println("[GameManager] Error: " + e.getMessage());
                     return;
                 }
-               
+
                 
                 if (qm.from.equals(u1)) {
                     if (nP1 < 0) {
-                        message(player1, "Please select a card by entering it's number from 0 to 4.");
                         nP1 = parseIn(qm.message);
                         if (qm.message.equals("SURRENDER")) {
                             surrender(player1, player2);
@@ -226,7 +240,6 @@ public class GameManager implements Runnable {
                 }
                 if (qm.from.equals(u2)) {
                     if (nP2 < 0 ) {
-                        message(player2, "Please select a card by entering it's number from 0 to 4.");
                         nP2 = parseIn(qm.message);
                         if (qm.message.equals("SURRENDER")) {
                             surrender(player2, player1);
@@ -234,7 +247,14 @@ public class GameManager implements Runnable {
                         }
                     }
                 }
-
+                if (qm.message.equals("DISCONNECT")) {
+                    if (qm.from.equals(u1)) {
+                        disconnect(player2);
+                    } else if (qm.from.equals(u2)) {
+                        disconnect(player1);
+                    }
+                    return;
+                }
             }
             
             // Resolve the duel
@@ -261,8 +281,8 @@ public class GameManager implements Runnable {
                     m2 = "won";
                 }
             }
-            message(player1, "ROUND_END You " + m1 + " against : " + String.valueOf(cardP2.getVal()) + " of " + cardP2.familyToString() + "\nNow your score is " + scores[0]);
-            message(player2, "ROUND_END You " + m2 + " against : " + String.valueOf(cardP1.getVal()) + " of " + cardP1.familyToString() + "\nNow your score is " + scores[1]);
+            message(player1, "ROUND_END You " + m1 + " against : " + cardP2.getVal() + " of " + cardP2.familyToString() + "\nNow your score is " + scores[0]);
+            message(player2, "ROUND_END You " + m2 + " against : " + cardP1.getVal() + " of " + cardP1.familyToString() + "\nNow your score is " + scores[1]);
         }
 
         // Releasing scores

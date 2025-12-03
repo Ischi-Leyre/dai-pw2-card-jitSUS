@@ -61,7 +61,7 @@ public class Client implements Callable<Integer> {
                 try {
                     String serverLine;
                     while ((serverLine = in.readLine()) != null) {
-                        System.out.println(serverLine);
+                        System.out.println("> " + serverLine);
                         if(serverLine.equals("SERVER_SHUTDOWN")){
                             disconnect.set(true);
                             return;
@@ -78,7 +78,6 @@ public class Client implements Callable<Integer> {
             
             // User command handeling
             while (!disconnect.get()) {
-                System.out.print("> ");
                 if (!scanner.hasNextLine()) break;
                 String line = scanner.nextLine().trim();
                 if (line.isEmpty()) continue;
