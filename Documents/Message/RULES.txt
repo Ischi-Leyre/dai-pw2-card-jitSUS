@@ -1,0 +1,34 @@
+Rules:
+Each card is unique and has both a type and a value between 1 and 9.
+The 4 card types are:
+- 🔪 : Knife
+- 🔫 : Gun
+- 👊 : Fist
+- 🧪 : Acid
+Each player has a hand of 5 cards drawn from a deck of 36 cards.
+Each turn, a player has 30 seconds to play one card (otherwise, a random card is automatically played).
+
+Win Conditions:
+There are three possible victory types per round:
+1. Aggressive Victory:
+    The player with the superior type wins.
+    → Winner: +2 pts | Loser: +0 pts
+
+    Type hierarchy:
+    - Acid beats Gun
+    - Gun beats Knife
+    - Knife beats Fist
+    - Fist beats Acid
+2. Equal-Type Victory:
+    If both cards share the same type, the higher value wins.
+    → Winner: +1 pt | Loser: +0 pt
+3. Opposite Victory:
+    If the types differ but are not in an aggressive relationship, the lower value wins.
+    → Winner: +0 pt | Loser: -1 pt
+    If both values are equal → no points are awarded.
+
+End of the Game:
+At the end of each round, 5 new cards are dealt to both players.
+A match ends when:
+- a player reaches 7 points, or
+- after 13 rounds (in which case both players lose).

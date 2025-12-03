@@ -1,0 +1,11 @@
+Commands:
+- DISCONNECT : disconnects player.
+- GETPLAYERS : shows the list of connected player.
+- CHALLENGE <targetPlayer> : extends a match invitation to targeted player.
+- ACCEPT <y\n> : accepts or refuse recived invitation
+- PLAY <cardNum> : play card number cardNum from your hand
+- SURRENDER : surrenders victory of the current match to the opponent
+- MATCH_MSG <message>: send a message to the opponent
+- MMR : shows the player mmr
+- RULES : shows game Rules
+- HELP : shows this list of commands
